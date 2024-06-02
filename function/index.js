@@ -6,18 +6,18 @@ const randomstring = require("randomstring")
 
 const { JWT_KEY, JWT_EXPIRES_IN } = process.env;
 
-let encode = (data) => {
+let enCode = (data) => {
     return jwt.sign(data, JWT_KEY || "RANDOM@KEY", { expiresIn: JWT_EXPIRES_IN || 100 });
 }
 
-let decode = (encrypted) => {
+let deCode = (encrypted) => {
     return jwt.verify(encrypted, JWT_KEY || "RANDOM@KEY");
 }
 
-let code = (length) => {
+let createCode = (length) => {
     return randomstring.generate({ length: length, charset: 'numeric' })
 }
 
 module.exports = {
-    encode, decode, code
+    enCode, deCode, createCode
 }

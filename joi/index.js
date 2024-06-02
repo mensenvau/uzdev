@@ -1,4 +1,4 @@
-const convert = errors => {
+const convertError = errors => {
     const res = {};
     errors?.details?.forEach(detail => {
         const key = detail?.context?.key;
@@ -13,7 +13,7 @@ const createValidator = (schema, type) => async (req, res, next) => {
         await schema.validateAsync(req[type], { abortEarly: false });
         next();
     } catch (err) {
-        res.status(422).json({ message: "Validation error: Invalid format.", details: convert(err) });
+        res.status(422).json({ message: "Validation error: Invalid format.", details: convertError(err) });
     }
 };
 
