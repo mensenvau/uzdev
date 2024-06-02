@@ -1,2 +1,108 @@
-# helper
-npm "@helper"
+# Uzdev
+
+## Installation
+
+You can install the package via npm:
+
+```bash
+npm install uzdev
+```
+
+## Configuration
+
+Add the following variables to your environment file (.env.development, .env.production, or .env):
+
+```bash
+# MySQL module
+
+MYSQL_USERNAME=<your_mysql_username>
+MYSQL_HOST=<your_mysql_host>
+MYSQL_DATABASE=<your_mysql_database>
+MYSQL_PASSWORD=<your_mysql_password>
+MYSQL_WAIT=true # defaul
+MYSQL_CONNECTION_LIMIT=10 # defaul
+MYSQL_QUEUE_LIMIT=0 # defaul
+MYSQL_MULTIPLE_STATEMENTS=true # defaul
+MYSQL_CONNECT_TIMEOUT=60000 # defaul
+MYSQL_DATE_STR=true # defaul
+
+# Function module
+
+JWT_KEY=<your_jwt_key>
+JWT_EXPIRES_IN=10d # defaul
+
+# Sender module
+
+EMAIL_LOGIN=<your_email_login>
+EMAIL_PASSWORD=<your_email_password>
+FROM_EMAIL=<from_email_address>
+SMS_ESKIZ_TOKEN=<your_eskiz_first_token>,
+SMS_ESKIZ_EMIAL=<your_eskiz_email>,
+SMS_ESKIZ_FROM=<your_eskiz_from_code>
+```
+
+## Example
+
+### MySQL Module
+
+```javascript
+const { execute } = require("uzdev/mysql");
+
+(async () => {
+  try {
+    const result = await execute("select * from fact_users", [], 1);
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+  }
+})();
+```
+
+### Function Module
+
+```javascript
+const { decode, encode } = require("uzdev/function");
+
+(async () => {
+  try {
+    const encrypted = await encode({ hello: "salom" });
+    console.log(encrypted);
+    console.log(decode(encrypted));
+  } catch (error) {
+    console.error(error);
+  }
+})();
+```
+
+### Sender Module
+
+You will need to buy an SMS package from "eskiz.uz" and you will need to create a specific text template "eskiz.uz".
+
+```javascript
+const { emailSender, smsSender } = require("uzdev/sender");
+
+(async () => {
+  emailSender(
+    "balkibumen@gmail.com",
+    "Test email",
+    "<b> Hello bro <b>",
+    (email, status, message) => {
+      if (status == 1) return console.log("SUCCESS", email, message);
+      console.log("ERROR", email, message);
+    }
+  );
+
+  smsSender(
+    "995441550",
+    "Webdoc.io platformasi uchun tasdiqlash kodi: 12345",
+    (phone, status, message) => {
+      if (status == 1) return console.log("SUCCESS", phone, message);
+      console.log("ERROR", phone, message);
+    }
+  );
+})();
+```
+
+## License
+
+This README covers the installation, configuration, and usage of your npm package `uzdev`, including examples for each module. Adjust the placeholders with your actual credentials and customize it further if needed.

@@ -1,0 +1,40 @@
+{
+  "name": "uzdev",
+  "version": "1.0.4",
+  "description": "My own library!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "authors": [
+    {
+      "name": "Utkir Khujaev",
+      "email": "balkibumen@gmail.com",
+      "url": "https://t.me/mensenvau"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mensenvau/uzdev.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mensenvau/uzdev/issues"
+  },
+  "keywords": [
+    "git",
+    "backups",
+    "express",
+    "mysql2",
+    "nodemailer",
+    "jsonwebtoken"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.10.0",
+    "nodemailer": "^6.9.13",
+    "sync-request": "^6.1.0"
+  }
+}
