@@ -143,6 +143,12 @@ uzdev push
 uzdev pull
 ```
 
+### Joi
+
+```javascript
+
+```
+
 ## License
 
 This README covers the installation, configuration, and usage of your npm package `uzdev`, including examples for each module. Adjust the placeholders with your actual credentials and customize it further if needed.
