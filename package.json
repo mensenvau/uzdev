@@ -1,6 +1,6 @@
 {
   "name": "uzdev",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "My own library!",
   "main": "index.js",
   "scripts": {

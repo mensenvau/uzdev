@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const { JWT_KEY, JWT_EXPIRES_IN } = process.env;
 
 let encode = (data) => {
-    console.log(JWT_EXPIRES_IN || "10d")
     return jwt.sign(data, JWT_KEY || "RANDOM@KEY", { expiresIn: JWT_EXPIRES_IN || 100 });
 }
 

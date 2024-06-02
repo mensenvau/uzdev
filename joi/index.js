@@ -8,16 +8,16 @@ const convert = errors => {
     return res;
 };
 
-const createValidator = schema => async (req, res, next) => {
+const createValidator = (schema, type) => async (req, res, next) => {
     try {
-        await schema.validateAsync(req[schema.type], { abortEarly: false });
+        await schema.validateAsync(req[type], { abortEarly: false });
         next();
     } catch (err) {
         res.status(422).json({ message: "Validation error: Invalid format.", details: convert(err) });
     }
 };
 
-const body = schema => createValidator({ ...schema, type: 'body' });
-const params = schema => createValidator({ ...schema, type: 'params' });
+const body = schema => createValidator(schema, 'body');
+const params = schema => createValidator(schema, 'params');
 
 module.exports = { body, params };
