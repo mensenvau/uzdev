@@ -1,5 +1,7 @@
 const request = require('sync-request');
-const fs = require('fs').promises;
+const fs = require('fs');
+const path = require('path');
+
 const { SMS_ESKIZ_FROM, SMS_ESKIZ_TOKEN, SMS_ESKIZ_EMIAL } = process.env;
 
 const smsToken = async () => {
@@ -16,7 +18,7 @@ const smsToken = async () => {
         }
 
         const { token } = JSON.parse(res.getBody('utf8')).data;
-        await fs.writeFile("./eskiz_token.txt", token, { encoding: "utf-8" });
+        fs.writeFileSync(path.join(__dirname, "./eskiz_token.txt"), token, { encoding: "utf-8" });
     } catch (err) {
         console.log(err.message);
     }
@@ -25,12 +27,12 @@ const smsToken = async () => {
 const smsSender = async (phone, text, callback, step = 0) => {
     try {
         if (!text || !phone) {
-            return callback(phone, 0, "sms matni yoki telefon raqam xato!");
+            return callback(phone, 0, "sms text or phone number is wrong!");
         }
 
         let token;
         try {
-            token = await fs.readFile('./eskiz_token.txt', { encoding: "utf-8" });
+            token = fs.readFileSync(path.join(__dirname, "./eskiz_token.txt"), { encoding: "utf-8" });
         } catch (err) {
             console.log(err.message);
         }

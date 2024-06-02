@@ -103,6 +103,46 @@ const { emailSender, smsSender } = require("uzdev/sender");
 })();
 ```
 
+### DevOps
+
+Can create a sequence of commands as desired
+For example, to do git push and pull, you don't need to learn webhook or other additional tools.
+
+```json
+{
+  "push": [
+    {
+      "name": "add",
+      "command": "git add ."
+    },
+    {
+      "name": "commit",
+      "command": "git commit -m 'Update from $(whoami) on $(date +\"%Y-%m-%d %T\")'"
+    },
+    {
+      "name": "push",
+      "command": "git push"
+    }
+  ],
+  "pull": [
+    {
+      "name": "pull",
+      "command": "git pull"
+    },
+    {
+      "name": "pm2 restart",
+      "command": "pm2 restart all"
+    }
+  ]
+}
+```
+
+```bash
+# command example:
+uzdev push
+uzdev pull
+```
+
 ## License
 
 This README covers the installation, configuration, and usage of your npm package `uzdev`, including examples for each module. Adjust the placeholders with your actual credentials and customize it further if needed.
