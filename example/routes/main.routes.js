@@ -6,7 +6,7 @@ const app = express()
 app.use(authCheck)
 
 require('./public.routes')(app);
-require('./auth.routes')(app);
+// require('./auth.routes')(app); // if you need you can comment out.
 
 // auth stop
 app.use(authStop)
