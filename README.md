@@ -82,7 +82,7 @@ randomCode(5); // 37453;
 You will need to buy an SMS package from "eskiz.uz" and you will need to create a specific text template "eskiz.uz".
 
 ```javascript
-const { emailSender, smsSender } = require("uzdev/sender");
+const { emailSender, smsSender, botSender } = require("uzdev/sender");
 
 (async () => {
   emailSender(
@@ -103,6 +103,8 @@ const { emailSender, smsSender } = require("uzdev/sender");
       console.log("ERROR", phone, message);
     }
   );
+
+  botSender("this is error!");
 })();
 ```
 

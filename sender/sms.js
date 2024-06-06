@@ -20,7 +20,7 @@ const smsToken = async () => {
         const { token } = JSON.parse(res.getBody('utf8')).data;
         fs.writeFileSync(path.join(__dirname, "./eskiz_token.txt"), token, { encoding: "utf-8" });
     } catch (err) {
-        console.log(err.message);
+        console.error('\x1b[31m%s\x1b[0m', err.message);
     }
 };
 
@@ -34,7 +34,7 @@ const smsSender = async (phone, text, callback, step = 0) => {
         try {
             token = fs.readFileSync(path.join(__dirname, "./eskiz_token.txt"), { encoding: "utf-8" });
         } catch (err) {
-            console.log(err.message);
+            console.error('\x1b[31m%s\x1b[0m', err.message);
         }
 
         const res = request('POST', 'https://notify.eskiz.uz/api/message/sms/send', {
