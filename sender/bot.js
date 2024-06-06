@@ -9,7 +9,7 @@ let botSender = (message) => {
         if (res.statusCode !== 200) {
             throw new Error(res.body.toString('utf-8'))
         }
-    } catch (error) {
+    } catch (err) {
         console.error('\x1b[31m%s\x1b[0m', err.message);
     }
 }

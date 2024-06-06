@@ -23,8 +23,8 @@ const pool = mysql.createPool({
     try {
         connection = await pool.getConnection();
         console.log('\x1b[32m%s\x1b[0m', 'Successfully connected to the database.'); // Green color
-    } catch (error) {
-        console.error('\x1b[31m%s\x1b[0m', 'Failed to connect to the database:', error.message); // Red color
+    } catch (err) {
+        console.error('\x1b[31m%s\x1b[0m', 'Failed to connect to the database:', err.message); // Red color
         process.exit(1); // Exit the process with an error code
     } finally {
         if (connection) connection.release(); // release connection back to pool
