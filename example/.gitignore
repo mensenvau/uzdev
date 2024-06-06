@@ -10,11 +10,6 @@ node_modules/
 dist/
 build/
 
-# Configuration files
-# *.env
-# *.env.development
-# *.env.production
-
 # IDE files
 .idea/
 .vscode/
