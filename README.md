@@ -61,17 +61,20 @@ const { execute } = require("uzdev/mysql");
 ### Function Module
 
 ```javascript
-const { decode, encode } = require("uzdev/function");
+const { enCode, deCode, randomCode } = require("uzdev/function");
 
 (async () => {
   try {
-    const encrypted = await encode({ hello: "salom" });
+    const encrypted = await enCode({ hello: "salom" });
     console.log(encrypted);
-    console.log(decode(encrypted));
+    console.log(deCode(encrypted));
   } catch (error) {
     console.error(error);
   }
 })();
+
+// example random code create
+randomCode(5); // 37453;
 ```
 
 ### Sender Module
@@ -146,7 +149,15 @@ uzdev pull
 ### Joi
 
 ```javascript
+const Joi = require("joi");
+const { body } = require("uzdev/joi");
 
+const YOUR_SCHEMA = Joi.object({
+  name: Joi.string().min(5).max(200).required(),
+  // more
+});
+
+app.put("/companies", body(YOUR_SCHEMA), YOUR_NEXT_ROUTER);
 ```
 
 ## License

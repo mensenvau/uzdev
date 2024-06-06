@@ -19,5 +19,7 @@ const createValidator = (schema, type) => async (req, res, next) => {
 
 const body = schema => createValidator(schema, 'body');
 const params = schema => createValidator(schema, 'params');
+const query = schema => createValidator(schema, 'query');
 
-module.exports = { body, params };
+
+module.exports = { body, params, query };

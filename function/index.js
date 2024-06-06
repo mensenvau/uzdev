@@ -14,10 +14,10 @@ let deCode = (encrypted) => {
     return jwt.verify(encrypted, JWT_KEY || "RANDOM@KEY");
 }
 
-let createCode = (length) => {
+let randomCode = (length) => {
     return randomstring.generate({ length: length, charset: 'numeric' })
 }
 
 module.exports = {
-    enCode, deCode, createCode
+    enCode, deCode, randomCode
 }
