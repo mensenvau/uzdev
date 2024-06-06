@@ -1,29 +1,35 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const fse = require('fs-extra');
 const path = require('path');
-const fs_extra = require('fs-extra');
 
 const { execSync } = require('child_process');
 
 (async () => {
-
     try {
         const command = process.argv[2];
+        const sub = process.argv[3]
 
         if (command == 'create') {
-            fs_extra.copy(path.join(__dirname, "../example"), path.join(process.cwd(), process.argv[3]))
-                .then(() => console.log('\x1b[32m%s\x1b[0m', 'Folder copied successfully!\n\n', 'Next steps: \nnpm i\n npm run start'))
-                .catch(err => console.error('\x1b[31m%s\x1b[0m', 'Error copying folder:', err.message));
+            if (fs.existsSync(path.join(process.cwd(), sub)) && fs.readdirSync(path.join(process.cwd(), sub)).length != 0) {
+                console.error('\x1b[31m%s\x1b[0m', 'Folder is not empty.');
+            } else {
+                try {
+                    fse.copySync(path.join(__dirname, "../example"), path.join(process.cwd(), sub))
+                    console.log('\x1b[32m%s\x1b[0m', 'Folder copied successfully!\n\n', 'Next steps:\n - npm i\n - npm run start')
+                } catch (err) {
+                    console.error('\x1b[31m%s\x1b[0m', 'Error copying folder:', err.message)
+                }
+            }
         }
 
         if (command == 'run') {
-            // Read the devops.json file
             const devops = JSON.parse(fs.readFileSync('devops.json', 'utf-8'));
-            const jobs = devops[command];
+            const jobs = devops[sub];
 
             if (!jobs) {
-                console.error(`\x1b[31mError: Command "${command}" not found in devops.json\x1b[0m`);
+                console.error(`\x1b[31mError: Command "${sub}" not found in devops.json\x1b[0m`);
                 process.exit(1);
             }
 

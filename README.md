@@ -144,8 +144,8 @@ For example, to do git push and pull, you don't need to learn webhook or other a
 
 ```bash
 # command example:
-uzdev push
-uzdev pull
+uzdev run push
+uzdev run pull
 ```
 
 ### Joi
