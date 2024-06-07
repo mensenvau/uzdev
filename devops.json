@@ -6,7 +6,7 @@
     },
     {
       "name": "commit",
-      "command": "git commit -m 'Update from $(whoami) on $(date +\"%Y-%m-%d %T\")'"
+      "command": "git commit -m \"Update from $(whoami) on $(date +'%Y-%m-%d %T')\""
     },
     {
       "name": "push",
