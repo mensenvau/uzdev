@@ -162,6 +162,16 @@ const YOUR_SCHEMA = Joi.object({
 app.put("/companies", body(YOUR_SCHEMA), YOUR_NEXT_ROUTER);
 ```
 
+## file uploader
+
+```javascript
+const { fileUploader } = require("uzdev/uploader");
+
+app.post("/user/upload", fileUploader("pdf"), YOUR_NEXT_ROUTER);
+// or
+app.post("/user/upload", fileUploader("pdf", filter), YOUR_NEXT_ROUTER);
+```
+
 ## License
 
 This README covers the installation, configuration, and usage of your npm package `uzdev`, including examples for each module. Adjust the placeholders with your actual credentials and customize it further if needed.
