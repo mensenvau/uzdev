@@ -39,6 +39,18 @@ FROM_EMAIL=<from_email_address>
 SMS_ESKIZ_TOKEN=<your_eskiz_first_token>,
 SMS_ESKIZ_EMIAL=<your_eskiz_email>,
 SMS_ESKIZ_FROM=<your_eskiz_from_code>
+
+# for logs to save on telegram bot
+BOT_TOKEN=<bot token>
+MAIN_CHAT=<chat id>
+APP_NAME=<app name>
+
+
+# File uploader
+UPLOAD_SIZE=5120 #5mb
+UPLOAD_ROOT=public/uploads/
+UPLOAD_ALLOWED_MIME_TYPES=application/pdf,image/jpeg,image/png
+
 ```
 
 ## Example
@@ -49,12 +61,12 @@ SMS_ESKIZ_FROM=<your_eskiz_from_code>
 const { execute } = require("uzdev/mysql");
 
 (async () => {
-  try {
-    const result = await execute("select * from fact_users", [], 1);
-    console.log(result);
-  } catch (error) {
-    console.error(error);
-  }
+    try {
+        const result = await execute("select * from fact_users", [], 1);
+        console.log(result);
+    } catch (error) {
+        console.error(error);
+    }
 })();
 ```
 
@@ -64,13 +76,13 @@ const { execute } = require("uzdev/mysql");
 const { enCode, deCode, randomCode } = require("uzdev/function");
 
 (async () => {
-  try {
-    const encrypted = await enCode({ hello: "salom" });
-    console.log(encrypted);
-    console.log(deCode(encrypted));
-  } catch (error) {
-    console.error(error);
-  }
+    try {
+        const encrypted = await enCode({ hello: "salom" });
+        console.log(encrypted);
+        console.log(deCode(encrypted));
+    } catch (error) {
+        console.error(error);
+    }
 })();
 
 // example random code create
@@ -85,26 +97,17 @@ You will need to buy an SMS package from "eskiz.uz" and you will need to create 
 const { emailSender, smsSender, botSender } = require("uzdev/sender");
 
 (async () => {
-  emailSender(
-    "balkibumen@gmail.com",
-    "Test email",
-    "<b> Hello bro <b>",
-    (email, status, message) => {
-      if (status == 1) return console.log("SUCCESS", email, message);
-      console.log("ERROR", email, message);
-    }
-  );
+    emailSender("balkibumen@gmail.com", "Test email", "<b> Hello bro <b>", (email, status, message) => {
+        if (status == 1) return console.log("SUCCESS", email, message);
+        console.log("ERROR", email, message);
+    });
 
-  smsSender(
-    "995441550",
-    "Webdoc.io platformasi uchun tasdiqlash kodi: 12345",
-    (phone, status, message) => {
-      if (status == 1) return console.log("SUCCESS", phone, message);
-      console.log("ERROR", phone, message);
-    }
-  );
+    smsSender("995441550", "Webdoc.io platformasi uchun tasdiqlash kodi: 12345", (phone, status, message) => {
+        if (status == 1) return console.log("SUCCESS", phone, message);
+        console.log("ERROR", phone, message);
+    });
 
-  botSender("this is error!");
+    botSender("this is error!");
 })();
 ```
 
@@ -115,30 +118,30 @@ For example, to do git push and pull, you don't need to learn webhook or other a
 
 ```json
 {
-  "push": [
-    {
-      "name": "add",
-      "command": "git add ."
-    },
-    {
-      "name": "commit",
-      "command": "git commit -m 'Update from $(whoami) on $(date +\"%Y-%m-%d %T\")'"
-    },
-    {
-      "name": "push",
-      "command": "git push"
-    }
-  ],
-  "pull": [
-    {
-      "name": "pull",
-      "command": "git pull"
-    },
-    {
-      "name": "pm2 restart",
-      "command": "pm2 restart all"
-    }
-  ]
+    "push": [
+        {
+            "name": "add",
+            "command": "git add ."
+        },
+        {
+            "name": "commit",
+            "command": "git commit -m 'Update from $(whoami) on $(date +\"%Y-%m-%d %T\")'"
+        },
+        {
+            "name": "push",
+            "command": "git push"
+        }
+    ],
+    "pull": [
+        {
+            "name": "pull",
+            "command": "git pull"
+        },
+        {
+            "name": "pm2 restart",
+            "command": "pm2 restart all"
+        }
+    ]
 }
 ```
 
@@ -152,19 +155,22 @@ uzdev run pull
 
 ```javascript
 const Joi = require("joi");
-const { body } = require("uzdev/joi");
+const { body, params, query } = require("uzdev/joi");
 
 const YOUR_SCHEMA = Joi.object({
-  name: Joi.string().min(5).max(200).required(),
-  // more
+    name: Joi.string().min(5).max(200).required(),
+    // more
 });
 
 app.put("/companies", body(YOUR_SCHEMA), YOUR_NEXT_ROUTER);
+app.put("/companies", params(YOUR_SCHEMA), YOUR_NEXT_ROUTER);
+app.put("/companies", query(YOUR_SCHEMA), YOUR_NEXT_ROUTER);
 ```
 
-## file uploader
+## File uploader
 
 ```javascript
+// const filter =  /* this is for multer fileFilter */
 const { fileUploader } = require("uzdev/uploader");
 
 app.post("/user/upload", fileUploader("pdf"), YOUR_NEXT_ROUTER);
