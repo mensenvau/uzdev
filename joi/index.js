@@ -1,8 +1,8 @@
-const convertError = errors => {
+const convertError = (errors) => {
     const res = {};
-    errors?.details?.forEach(detail => {
+    errors?.details?.forEach((detail) => {
         const key = detail?.context?.key;
-        const message = detail?.message?.replace(/^"(.*)" is required$/, '$1 is required');
+        const message = detail?.message?.replace(/^"(.*)" is required$/, "$1 is required");
         if (key) res[key] = message;
     });
     return res;
@@ -17,9 +17,8 @@ const createValidator = (schema, type) => async (req, res, next) => {
     }
 };
 
-const body = schema => createValidator(schema, 'body');
-const params = schema => createValidator(schema, 'params');
-const query = schema => createValidator(schema, 'query');
-
+const body = (schema) => createValidator(schema, "body");
+const params = (schema) => createValidator(schema, "params");
+const query = (schema) => createValidator(schema, "query");
 
 module.exports = { body, params, query };

@@ -1,10 +1,12 @@
 // import .env file.
-require("../function/dotenv")
+require("../function/dotenv");
 
-const { botSender } = require("./bot")
-const { emailSender } = require("./email")
-const { smsSender } = require("./sms")
+const { botSender } = require("./bot");
+const { emailSender } = require("./email");
+const { smsSender } = require("./sms");
 
 module.exports = {
-    emailSender, smsSender, botSender
-}
+    emailSender,
+    smsSender,
+    botSender,
+};

@@ -1,20 +1,19 @@
-
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 const { SMS_ESKIZ_FROM, SMS_ESKIZ_TOKEN, SMS_ESKIZ_EMIAL } = process.env;
 
 const smsToken = async () => {
     try {
-        const res = await fetch('http://notify.eskiz.uz/api/auth/login', {
-            method: 'POST',
+        const res = await fetch("http://notify.eskiz.uz/api/auth/login", {
+            method: "POST",
             headers: {
-                'content-type': 'application/x-www-form-urlencoded'
+                "content-type": "application/x-www-form-urlencoded",
             },
             body: new URLSearchParams({
                 email: SMS_ESKIZ_EMIAL,
-                password: SMS_ESKIZ_TOKEN
-            })
+                password: SMS_ESKIZ_TOKEN,
+            }),
         });
 
         if (!res.ok) {
@@ -25,11 +24,18 @@ const smsToken = async () => {
 
         fs.writeFileSync(path.join(__dirname, "./eskiz_token.txt"), token, { encoding: "utf-8" });
     } catch (err) {
-        console.error('\x1b[31m%s\x1b[0m', err.message);
+        console.error("\x1b[31m%s\x1b[0m", err.message);
     }
 };
 
-const smsSender = async (phone, text, callback = () => { console.log("not found callback!") }, step = 0) => {
+const smsSender = async (
+    phone,
+    text,
+    callback = () => {
+        console.log("not found callback!");
+    },
+    step = 0
+) => {
     try {
         if (!text || !phone) {
             return callback(phone, 0, "sms text or phone number is wrong!");
@@ -39,20 +45,20 @@ const smsSender = async (phone, text, callback = () => { console.log("not found 
         try {
             token = fs.readFileSync(path.join(__dirname, "./eskiz_token.txt"), { encoding: "utf-8" });
         } catch (err) {
-            console.error('\x1b[31m%s\x1b[0m', err.message);
+            console.error("\x1b[31m%s\x1b[0m", err.message);
         }
 
-        const res = await fetch('https://notify.eskiz.uz/api/message/sms/send', {
-            method: 'POST',
+        const res = await fetch("https://notify.eskiz.uz/api/message/sms/send", {
+            method: "POST",
             headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-                "Authorization": `Bearer ${token}`
+                "content-type": "application/x-www-form-urlencoded",
+                Authorization: `Bearer ${token}`,
             },
             body: new URLSearchParams({
                 mobile_phone: `998${phone}`,
                 message: text,
-                from: SMS_ESKIZ_FROM
-            })
+                from: SMS_ESKIZ_FROM,
+            }),
         });
 
         if (res.status === 401 && step === 0) {

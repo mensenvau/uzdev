@@ -1,6 +1,6 @@
-const multer = require('multer');
-const randomstring = require('randomstring');
-const path = require('path');
+const multer = require("multer");
+const randomstring = require("randomstring");
+const path = require("path");
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -10,12 +10,12 @@ const storage = multer.diskStorage({
         let fileName = randomstring.generate(40) + path.extname(file.originalname);
         req.file_name = fileName;
         cb(null, fileName);
-    }
+    },
 });
 
 const fileFilter = (req, file, cb) => {
     try {
-        let allowedMimeTypes = process.env.UPLOAD_ALLOWED_MIME_TYPES?.split(',');
+        let allowedMimeTypes = process.env.UPLOAD_ALLOWED_MIME_TYPES?.split(",");
         if (allowedMimeTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
@@ -30,7 +30,7 @@ const fileUploader = (fieldName, filter = null) => {
     let upload = multer({
         storage: storage,
         limits: { fileSize: parseInt(process.env.UPLOAD_SIZE) * 1024 },
-        fileFilter: filter || fileFilter
+        fileFilter: filter || fileFilter,
     });
 
     return (req, res, next) => {
@@ -43,7 +43,7 @@ const fileUploader = (fieldName, filter = null) => {
                 }
 
                 if (!req.file) {
-                    return next(new Error(JSON.stringify({ message: 'Please upload the correct file type', code: "multer" })));
+                    return next(new Error(JSON.stringify({ message: "Please upload the correct file type", code: "multer" })));
                 }
 
                 next();
