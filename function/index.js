@@ -24,9 +24,18 @@ const fnCatch = (fn) => (req, res, next) => {
     });
 };
 
+const tryCatch =
+    (code, fn) =>
+    (...args) => {
+        Promise.resolve(fn(args)).catch((err) => {
+            console.log(`Message: ${err.message}, Code: ${code}`);
+        });
+    };
+
 module.exports = {
     enCode,
     deCode,
     randomCode,
     fnCatch,
+    tryCatch,
 };
