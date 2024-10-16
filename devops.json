@@ -6,7 +6,7 @@
         },
         {
             "name": "commit",
-            "command": "git commit -m \"Update from $(whoami) on $(date +'%Y-%m-%d %T')\""
+            "command": "git commit -m \"Update from $(whoami) on $(date +\"%Y-%m-%d %T\")\""
         },
         {
             "name": "push",
@@ -19,8 +19,22 @@
             "command": "git pull"
         },
         {
+            "name": "build",
+            "command": "cd ./web && npm run build"
+        },
+        {
             "name": "pm2 restart",
             "command": "pm2 restart all"
+        }
+    ],
+    "backups": [
+        {
+            "name": "create",
+            "command": "bash -c 'source .env && docker exec my_mysql mysqldump -u $MYSQL_USERNAME -p\"$MYSQL_PASSWORD\" --databases $MYSQL_DATABASE --routines --triggers --events > /root/backups/databases_backup.sql'"
+        },
+        {
+            "name": "sent",
+            "command": "bash -c 'source .env && curl -s -F \"caption=Backup of database: $MYSQL_DATABASE\" -F \"chat_id=$BACKUP_CHAT_ID\" -F document=@\"/root/backups/databases_backup.sql\" https://api.telegram.org/bot$BACKUP_BOT_TOKEN/sendDocument'"
         }
     ]
 }
