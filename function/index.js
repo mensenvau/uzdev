@@ -32,10 +32,23 @@ const tryCatch =
         });
     };
 
+const tryCatchWrapper =
+    (code, fn) =>
+    async (...args) => {
+        try {
+            const result = await Promise.resolve(fn(...args));
+            return result; // Return result if success
+        } catch (err) {
+            console.log(`Message: ${err.message}, Code: ${code}`);
+            return 0; // Return 0 if error
+        }
+    };
+
 module.exports = {
     enCode,
     deCode,
     randomCode,
     fnCatch,
     tryCatch,
+    tryCatchWrapper,
 };

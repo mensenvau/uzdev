@@ -13,16 +13,6 @@ const { execSync } = require("child_process");
 
         if (command == "create") {
             console.log("sorry this is not working now!");
-            // if (fs.existsSync(path.join(process.cwd(), sub)) && fs.readdirSync(path.join(process.cwd(), sub)).length != 0) {
-            //     console.error('\x1b[31m%s\x1b[0m', 'Folder is not empty.');
-            // } else {
-            //     try {
-            //         fse.copySync(path.join(__dirname, "../example"), path.join(process.cwd(), sub))
-            //         console.log('\x1b[32m%s\x1b[0m', 'Folder copied successfully!\n\n', 'Next steps:\n - npm i\n - npm run start')
-            //     } catch (err) {
-            //         console.error('\x1b[31m%s\x1b[0m', 'Error copying folder:', err.message)
-            //     }
-            // }
         }
 
         if (command == "run") {
