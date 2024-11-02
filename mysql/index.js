@@ -1,6 +1,3 @@
-// import .env file.
-require("../function/dotenv");
-
 const mysql = require("mysql2/promise");
 const { MYSQL_USERNAME, MYSQL_HOST, MYSQL_DATABASE, MYSQL_PASSWORD, MYSQL_WAIT, MYSQL_CONNECTION_LIMIT, MYSQL_QUEUE_LIMIT, MYSQL_MULTIPLE_STATEMENTS, MYSQL_CONNECT_TIMEOUT, MYSQL_DATE_STR } = process.env;
 
