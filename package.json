@@ -1,6 +1,6 @@
 {
     "name": "uzdev",
-    "version": "1.5.7",
+    "version": "1.6.0",
     "description": "These are ready-made functions in order not to rewrite some modules during the work process!",
     "main": "index.js",
     "scripts": {
