@@ -17,8 +17,20 @@ const createValidator = (schema, type) => async (req, res, next) => {
     }
 };
 
+const validator = (data, schema) => {
+    const { error, value } = schema.validate(data, { abortEarly: false });
+    if (error) {
+        const errors = error.details.map((err) => ({
+            message: err.message,
+            path: err.path.join('.')
+        }));
+        return { error: errors };
+    }
+    return { value };
+};
+
 const body = (schema) => createValidator(schema, "body");
 const params = (schema) => createValidator(schema, "params");
 const query = (schema) => createValidator(schema, "query");
 
-module.exports = { body, params, query };
+module.exports = { body, params, query, validator };
