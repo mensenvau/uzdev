@@ -1,4 +1,4 @@
-# Uzdev
+# uzdev
 
 ## Installation
 
