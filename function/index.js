@@ -21,21 +21,25 @@ const fnCatch = (fn) => (req, res, next) => {
     });
 };
 
-const tryCatch = (code, fn) => (...args) => {
-    Promise.resolve(fn(...args)).catch((err) => {
-        console.log(`Message: ${err.message}, Code: ${code}`);
-    });
-};
+const tryCatch =
+    (code, fn) =>
+    (...args) => {
+        Promise.resolve(fn(...args)).catch((err) => {
+            console.log(`Message: ${err.message}, Code: ${code}`);
+        });
+    };
 
-const tryCatchWrapper = (code, fn) => async (...args) => {
-    try {
-        const result = await Promise.resolve(fn(...args));
-        return result; // Return result if success
-    } catch (err) {
-        console.log(`Message: ${err.message}, Code: ${code}`);
-        return 0; // Return 0 if error
-    }
-};
+const tryCatchWrapper =
+    (code, fn) =>
+    async (...args) => {
+        try {
+            const result = await Promise.resolve(fn(...args));
+            return result; // Return result if success
+        } catch (err) {
+            console.log(`Message: ${err.message}, Code: ${code}`);
+            return 0; // Return 0 if error
+        }
+    };
 
 module.exports = {
     enCode,

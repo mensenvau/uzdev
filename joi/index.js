@@ -1,11 +1,11 @@
 const convertError = (errors) => {
-    const res = {};
-    errors?.details?.forEach((detail) => {
-        const key = detail?.context?.key;
-        const message = detail?.message?.replace(/^"(.*)" is required$/, "$1 is required");
-        if (key) res[key] = message;
-    });
-    return res;
+    return errors?.details?.reduce((acc, { context, message }) => {
+        const key = context?.key;
+        if (key) {
+            acc[key] = message.replace(/^"(.*)" is required$/, "$1 is required");
+        }
+        return acc;
+    }, {});
 };
 
 const createValidator = (schema, type) => async (req, res, next) => {
@@ -13,18 +13,23 @@ const createValidator = (schema, type) => async (req, res, next) => {
         await schema.validateAsync(req[type], { abortEarly: false });
         next();
     } catch (err) {
-        res.status(422).json({ message: "Validation error: Invalid format.", details: convertError(err) });
+        res.status(422).json({
+            code: 4,
+            message: "Oops! Something's wrong with the data format, please check and try again",
+            details: convertError(err),
+        });
     }
 };
 
 const validator = (data, schema) => {
     const { error, value } = schema.validate(data, { abortEarly: false });
     if (error) {
-        const errors = error.details.map((err) => ({
-            message: err.message,
-            path: err.path.join('.')
-        }));
-        return { error: errors };
+        return {
+            error: error.details.map(({ message, path }) => ({
+                message,
+                path: path.join("."),
+            })),
+        };
     }
     return { value };
 };
