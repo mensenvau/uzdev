@@ -14,14 +14,13 @@ const pool = mysql.createPool({
     dateStrings: MYSQL_DATE_STR || true,
 });
 
-// Testing the database connection
 (async () => {
     let connection;
     try {
         connection = await pool.getConnection();
         console.log("\x1b[32m%s\x1b[0m", "Successfully connected to MySQL.");
     } catch (err) {
-        console.error("\x1b[31m%s\x1b[0m", "Failed to connect to MySQL:", err.message);
+        console.error("\x1b[31m%s\x1b[0m", "Could not connect to MySQL:", err.message);
         process.exit(1);
     } finally {
         if (connection) connection.release();
