@@ -28,7 +28,7 @@ const emailSender = (to_email, subject, html, callback) => {
             }
         });
     } catch (err) {
-        console.error("\x1b[31m%s\x1b[0m", err.message); // Red color
+        console.error("\x1b[31m%s\x1b[0m", err.message);
     }
 };
 

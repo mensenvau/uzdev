@@ -3,8 +3,8 @@ const randomstring = require("randomstring");
 
 const { JWT_KEY, JWT_EXPIRES_IN } = process.env;
 
-let enCode = (data) => {
-    return jwt.sign(data, JWT_KEY || "RANDOM@KEY", { expiresIn: JWT_EXPIRES_IN || 100 });
+let enCode = (data, expires_in) => {
+    return jwt.sign(data, JWT_KEY || "RANDOM@KEY", { expiresIn: expires_in || JWT_EXPIRES_IN || 100 });
 };
 
 let deCode = (encrypted) => {
