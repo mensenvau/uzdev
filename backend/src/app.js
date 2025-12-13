@@ -4,11 +4,11 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 
 import authRouter from './routes/auth/auth.router.js'
-import userRouter from './routes/user/user.router.js'
-import roleRouter from './routes/role/role.router.js'
-import policyRouter from './routes/policy/policy.router.js'
-import groupRouter from './routes/group/group.router.js'
 import formRouter from './routes/form/form.router.js'
+import groupRouter from './routes/group/group.router.js'
+import policyRouter from './routes/policy/policy.router.js'
+import roleRouter from './routes/role/role.router.js'
+import userRouter from './routes/user/user.router.js'
 
 const app = express()
 
@@ -23,11 +23,11 @@ app.get('/health', (req, res) => {
 })
 
 app.use('/api/auth', authRouter)
-app.use('/api/users', userRouter)
-app.use('/api/roles', roleRouter)
-app.use('/api/policies', policyRouter)
-app.use('/api/groups', groupRouter)
 app.use('/api/forms', formRouter)
+app.use('/api/groups', groupRouter)
+app.use('/api/policies', policyRouter)
+app.use('/api/roles', roleRouter)
+app.use('/api/users', userRouter)
 
 app.use((err, req, res, next) => {
   console.error(err.stack)
