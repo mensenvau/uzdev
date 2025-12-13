@@ -1,55 +1,35 @@
 import { asyncHandler } from '../../utils/async.util.js'
-import { sendSuccess, sendError, sendValidationError } from '../../utils/response.util.js'
-import * as userService from './user.service.js'
-
-export const list = asyncHandler(async (req, res) => {
-  const { page, limit, search } = req.query
-  const result = await userService.findAllUsers({
-    page: parseInt(page) || 1,
-    limit: parseInt(limit) || 10,
-    search
-  })
-  sendSuccess(res, result)
-})
-
-export const get = asyncHandler(async (req, res) => {
-  const user = await userService.findUserById(req.params.id)
-  if (!user) {
-    return sendError(res, 'User not found', 404)
-  }
-  sendSuccess(res, { user })
-})
+import { sendSuccess } from '../../utils/response.util.js'
+import { userCreate, userDelete, userGet, userList, userUpdate } from './user.service.js'
 
 export const create = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body
+  const result = await userCreate(email, username, password)
+  sendSuccess(res, result, 'User created successfully', 201)
+})
 
-  if (!email || !username || !password) {
-    return sendValidationError(res, {
-      email: !email ? 'Email is required' : undefined,
-      username: !username ? 'Username is required' : undefined,
-      password: !password ? 'Password is required' : undefined
-    })
-  }
+export const list = asyncHandler(async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10
+  const offset = parseInt(req.query.offset) || 0
+  const result = await userList(limit, offset)
+  sendSuccess(res, result, 'Users retrieved successfully')
+})
 
-  const userId = await userService.createUser(email, username, password)
-  const user = await userService.findUserById(userId)
-  sendSuccess(res, { user }, 'User created successfully', 201)
+export const get = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  const result = await userGet(parseInt(id))
+  sendSuccess(res, result, 'User retrieved successfully')
 })
 
 export const update = asyncHandler(async (req, res) => {
-  const user = await userService.updateUser(req.params.id, req.body)
-  if (!user) {
-    return sendError(res, 'No fields to update or user not found', 400)
-  }
-  sendSuccess(res, { user }, 'User updated successfully')
+  const { id } = req.params
+  const { email, username } = req.body
+  const result = await userUpdate(parseInt(id), email, username)
+  sendSuccess(res, result, 'User updated successfully')
 })
 
-export const deleteUser = asyncHandler(async (req, res) => {
-  const deleted = await userService.deleteUser(req.params.id)
-  if (!deleted) {
-    return sendError(res, 'User not found', 404)
-  }
-  sendSuccess(res, null, 'User deleted successfully')
+export const remove = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  const result = await userDelete(parseInt(id))
+  sendSuccess(res, result, 'User deleted successfully')
 })
-
-export default { list, get, create, update, deleteUser }
