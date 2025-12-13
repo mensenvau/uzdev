@@ -1,0 +1,40 @@
+{
+  "name": "core-app-backend",
+  "version": "1.0.0",
+  "description": "Professional core app backend with auth, roles, policies, groups, and advanced forms",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "NODE_ENV=development node src/server.js",
+    "start": "node src/server.js",
+    "pm2:dev": "pm2 start ecosystem.config.cjs --env development",
+    "pm2:prod": "pm2 start ecosystem.config.cjs --env production",
+    "pm2:stop": "pm2 stop core-api",
+    "pm2:restart": "pm2 restart core-api",
+    "pm2:delete": "pm2 delete core-api",
+    "pm2:logs": "pm2 logs core-api",
+    "db:reset": "cd src/database && bash reset-db.sh"
+  },
+  "keywords": [
+    "express",
+    "mysql",
+    "auth",
+    "rbac",
+    "forms"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.6.5"
+  },
+  "devDependencies": {
+    "pm2": "^5.3.0"
+  }
+}
