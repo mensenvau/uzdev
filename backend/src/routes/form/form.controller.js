@@ -1,153 +1,120 @@
+import asyncHandler from '../../utils/async.util.js'
+import { sendSuccess, sendError } from '../../utils/response.util.js'
 import {
-  formCreate,
-  formGet,
   formList,
+  formGet,
+  formCreate,
   formUpdate,
   formDelete,
-  formAddField,
-  formAssignAccess,
-  formGenerateLink,
-  formCheckAccess,
-  formSubmitResponse,
-  formGetResponses
+  formResponseCreate,
+  formResponseGet,
+  formResponseList,
+  formResponseUpdateStatus
 } from './form.service.js'
-import { sendSuccess, sendError, sendForbidden } from '../../utils/response.util.js'
 
-export async function create(req, res) {
-  try {
-    const { name, description } = req.body
-    const form = await formCreate({
-      name,
-      description,
-      createdBy: req.user.id
-    })
-    return sendSuccess(res, form, 'Form created successfully', 201)
-  } catch (error) {
-    return sendError(res, error.message, 400)
+export const list = asyncHandler(async (req, res) => {
+  const { limit, offset } = req.query
+  const result = await formList({
+    limit: limit ? parseInt(limit) : 50,
+    offset: offset ? parseInt(offset) : 0
+  })
+  return sendSuccess(res, result, 'Forms retrieved successfully')
+})
+
+export const get = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  const form = await formGet(parseInt(id))
+  return sendSuccess(res, form, 'Form retrieved successfully')
+})
+
+export const create = asyncHandler(async (req, res) => {
+  const { name, description, fields, access } = req.body
+
+  if (!name) {
+    return sendError(res, 'Name is required', 400)
   }
-}
 
-export async function get(req, res) {
-  try {
-    const formId = req.params.id
-    const token = req.query.token
+  const form = await formCreate({
+    name,
+    description,
+    createdBy: req.user.id,
+    fields,
+    access
+  })
+  return sendSuccess(res, form, 'Form created successfully', 201)
+})
 
-    // Check access
-    const hasAccess = await formCheckAccess(formId, req.user?.id, token)
-    if (!hasAccess) {
-      return sendForbidden(res, 'You do not have access to this form')
-    }
+export const update = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  const { name, description, is_active } = req.body
 
-    const form = await formGet(formId)
-    return sendSuccess(res, form)
-  } catch (error) {
-    return sendError(res, error.message, 404)
+  if (!name) {
+    return sendError(res, 'Name is required', 400)
   }
-}
 
-export async function list(req, res) {
-  try {
-    const forms = await formList({ userId: req.user.id })
-    return sendSuccess(res, forms)
-  } catch (error) {
-    return sendError(res, error.message)
+  const form = await formUpdate(parseInt(id), { name, description, is_active })
+  return sendSuccess(res, form, 'Form updated successfully')
+})
+
+export const remove = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  await formDelete(parseInt(id))
+  return sendSuccess(res, null, 'Form deleted successfully')
+})
+
+export const createResponse = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  const { values } = req.body
+
+  if (!values || !Array.isArray(values)) {
+    return sendError(res, 'Values array is required', 400)
   }
-}
 
-export async function update(req, res) {
-  try {
-    const form = await formUpdate(req.params.id, req.body)
-    return sendSuccess(res, form, 'Form updated successfully')
-  } catch (error) {
-    return sendError(res, error.message, 400)
+  const response = await formResponseCreate({
+    formId: parseInt(id),
+    userId: req.user?.id,
+    values
+  })
+  return sendSuccess(res, response, 'Response created successfully', 201)
+})
+
+export const getResponse = asyncHandler(async (req, res) => {
+  const { responseId } = req.params
+  const response = await formResponseGet(parseInt(responseId))
+  return sendSuccess(res, response, 'Response retrieved successfully')
+})
+
+export const listResponses = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  const { limit, offset } = req.query
+  const result = await formResponseList({
+    formId: parseInt(id),
+    limit: limit ? parseInt(limit) : 50,
+    offset: offset ? parseInt(offset) : 0
+  })
+  return sendSuccess(res, result, 'Responses retrieved successfully')
+})
+
+export const updateResponseStatus = asyncHandler(async (req, res) => {
+  const { responseId } = req.params
+  const { status } = req.body
+
+  if (!status) {
+    return sendError(res, 'Status is required', 400)
   }
-}
 
-export async function deleteForm(req, res) {
-  try {
-    await formDelete(req.params.id)
-    return sendSuccess(res, null, 'Form deleted successfully')
-  } catch (error) {
-    return sendError(res, error.message, 404)
-  }
-}
-
-export async function addField(req, res) {
-  try {
-    const formId = req.params.id
-    const fieldId = await formAddField({ formId, ...req.body })
-    return sendSuccess(res, { fieldId }, 'Field added successfully', 201)
-  } catch (error) {
-    return sendError(res, error.message, 400)
-  }
-}
-
-export async function assignAccess(req, res) {
-  try {
-    const formId = req.params.id
-    const { accessType, accessValue, expiresAt } = req.body
-
-    await formAssignAccess({ formId, accessType, accessValue, expiresAt })
-    return sendSuccess(res, null, 'Access assigned successfully')
-  } catch (error) {
-    return sendError(res, error.message, 400)
-  }
-}
-
-export async function generateLink(req, res) {
-  try {
-    const formId = req.params.id
-    const { expiresAt } = req.body
-
-    const token = await formGenerateLink(formId, expiresAt)
-    return sendSuccess(res, { token }, 'Link generated successfully')
-  } catch (error) {
-    return sendError(res, error.message, 400)
-  }
-}
-
-export async function submitResponse(req, res) {
-  try {
-    const formId = req.params.id
-    const { answers, token } = req.body
-
-    // Check access
-    const hasAccess = await formCheckAccess(formId, req.user?.id, token)
-    if (!hasAccess) {
-      return sendForbidden(res, 'You do not have access to this form')
-    }
-
-    const responseId = await formSubmitResponse({
-      formId,
-      userId: req.user?.id,
-      answers
-    })
-
-    return sendSuccess(res, { responseId }, 'Response submitted successfully', 201)
-  } catch (error) {
-    return sendError(res, error.message, 400)
-  }
-}
-
-export async function getResponses(req, res) {
-  try {
-    const formId = req.params.id
-    const responses = await formGetResponses(formId)
-    return sendSuccess(res, responses)
-  } catch (error) {
-    return sendError(res, error.message)
-  }
-}
+  const response = await formResponseUpdateStatus(parseInt(responseId), status)
+  return sendSuccess(res, response, 'Response status updated successfully')
+})
 
 export default {
-  create,
-  get,
   list,
+  get,
+  create,
   update,
-  deleteForm,
-  addField,
-  assignAccess,
-  generateLink,
-  submitResponse,
-  getResponses
+  remove,
+  createResponse,
+  getResponse,
+  listResponses,
+  updateResponseStatus
 }

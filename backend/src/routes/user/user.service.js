@@ -1,57 +1,34 @@
-import { query, queryOne } from '../../config/db.config.js'
+import { queryMany, queryOne, poolConnection } from '../../utils/db.util.js'
 import { hashPassword } from '../../utils/password.util.js'
 
-/**
- * Get all users with pagination
- */
-export async function userList({ page = 1, limit = 10, search = '' }) {
-  const offset = (page - 1) * limit
+export async function userList({ limit = 50, offset = 0 }) {
+  const users = await queryMany(
+    `SELECT u.id, u.email, u.username, u.is_email_verified, u.created_at, u.updated_at,
+     GROUP_CONCAT(DISTINCT r.name) as roles
+     FROM users u
+     LEFT JOIN user_roles ur ON u.id = ur.user_id
+     LEFT JOIN roles r ON ur.role_id = r.id
+     GROUP BY u.id
+     ORDER BY u.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [limit, offset]
+  )
 
-  let sql = `
-    SELECT id, email, username, is_email_verified, created_at
-    FROM users
-  `
-  const params = []
-
-  if (search) {
-    sql += ' WHERE email LIKE ? OR username LIKE ?'
-    params.push(`%${search}%`, `%${search}%`)
-  }
-
-  sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
-  params.push(limit, offset)
-
-  const users = await query(sql, params)
-
-  // Get total count
-  let countSql = 'SELECT COUNT(*) as total FROM users'
-  const countParams = []
-
-  if (search) {
-    countSql += ' WHERE email LIKE ? OR username LIKE ?'
-    countParams.push(`%${search}%`, `%${search}%`)
-  }
-
-  const [{ total }] = await query(countSql, countParams)
+  const total = await queryOne('SELECT COUNT(*) as count FROM users')
 
   return {
     users,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit)
-    }
+    total: total.count,
+    limit,
+    offset
   }
 }
 
-/**
- * Get user by ID
- */
 export async function userGet(userId) {
   const user = await queryOne(
-    `SELECT id, email, username, is_email_verified, created_at
-     FROM users WHERE id = ?`,
+    `SELECT u.id, u.email, u.username, u.is_email_verified, u.google_id, u.created_at, u.updated_at
+     FROM users u
+     WHERE u.id = ?`,
     [userId]
   )
 
@@ -59,77 +36,151 @@ export async function userGet(userId) {
     throw new Error('User not found')
   }
 
-  // Get user roles
-  const roles = await query(
-    `SELECT r.id, r.name
+  const roles = await queryMany(
+    `SELECT r.id, r.name, r.description
      FROM roles r
      JOIN user_roles ur ON r.id = ur.role_id
      WHERE ur.user_id = ?`,
     [userId]
   )
 
-  return { ...user, roles }
-}
-
-/**
- * Create new user
- */
-export async function userCreate({ email, username, password }) {
-  const passwordHash = await hashPassword(password)
-
-  const result = await query(
-    'INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)',
-    [email, username, passwordHash]
+  const policies = await queryMany(
+    `SELECT DISTINCT p.id, p.name, p.description
+     FROM policies p
+     JOIN role_policies rp ON p.id = rp.policy_id
+     JOIN user_roles ur ON rp.role_id = ur.role_id
+     WHERE ur.user_id = ?`,
+    [userId]
   )
 
-  return await userGet(result.insertId)
+  return {
+    ...user,
+    roles,
+    policies
+  }
 }
 
-/**
- * Update user
- */
-export async function userUpdate(userId, { email, username, isEmailVerified }) {
-  const updates = []
-  const params = []
+export async function userCreate({ email, username, password, roleIds = [] }) {
+  const existingUser = await queryOne(
+    'SELECT id FROM users WHERE email = ? OR username = ?',
+    [email, username]
+  )
 
-  if (email !== undefined) {
-    updates.push('email = ?')
-    params.push(email)
+  if (existingUser) {
+    throw new Error('Email or username already exists')
   }
 
-  if (username !== undefined) {
-    updates.push('username = ?')
-    params.push(username)
+  const passwordHash = await hashPassword(password)
+
+  const conn = await poolConnection.getConnection()
+  try {
+    await conn.beginTransaction()
+
+    const [userResult] = await conn.execute(
+      'INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)',
+      [email, username, passwordHash]
+    )
+
+    const userId = userResult.insertId
+
+    if (roleIds.length > 0) {
+      for (const roleId of roleIds) {
+        await conn.execute(
+          'INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)',
+          [userId, roleId]
+        )
+      }
+    }
+
+    await conn.commit()
+
+    return await userGet(userId)
+  } catch (error) {
+    await conn.rollback()
+    throw error
+  } finally {
+    conn.release()
+  }
+}
+
+export async function userUpdate(userId, { email, username }) {
+  const user = await queryOne('SELECT id FROM users WHERE id = ?', [userId])
+
+  if (!user) {
+    throw new Error('User not found')
   }
 
-  if (isEmailVerified !== undefined) {
-    updates.push('is_email_verified = ?')
-    params.push(isEmailVerified)
+  const existingUser = await queryOne(
+    'SELECT id FROM users WHERE (email = ? OR username = ?) AND id != ?',
+    [email, username, userId]
+  )
+
+  if (existingUser) {
+    throw new Error('Email or username already exists')
   }
 
-  if (updates.length === 0) {
-    throw new Error('No fields to update')
-  }
-
-  params.push(userId)
-
-  await query(
-    `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
-    params
+  await queryMany(
+    'UPDATE users SET email = ?, username = ? WHERE id = ?',
+    [email, username, userId]
   )
 
   return await userGet(userId)
 }
 
-/**
- * Delete user
- */
 export async function userDelete(userId) {
-  const result = await query('DELETE FROM users WHERE id = ?', [userId])
+  const user = await queryOne('SELECT id FROM users WHERE id = ?', [userId])
 
-  if (result.affectedRows === 0) {
+  if (!user) {
     throw new Error('User not found')
   }
+
+  await queryMany('DELETE FROM users WHERE id = ?', [userId])
+
+  return true
+}
+
+export async function userAssignRole(userId, roleId) {
+  const user = await queryOne('SELECT id FROM users WHERE id = ?', [userId])
+  if (!user) {
+    throw new Error('User not found')
+  }
+
+  const role = await queryOne('SELECT id FROM roles WHERE id = ?', [roleId])
+  if (!role) {
+    throw new Error('Role not found')
+  }
+
+  const existing = await queryOne(
+    'SELECT id FROM user_roles WHERE user_id = ? AND role_id = ?',
+    [userId, roleId]
+  )
+
+  if (existing) {
+    throw new Error('User already has this role')
+  }
+
+  await queryMany(
+    'INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)',
+    [userId, roleId]
+  )
+
+  return true
+}
+
+export async function userRemoveRole(userId, roleId) {
+  const existing = await queryOne(
+    'SELECT id FROM user_roles WHERE user_id = ? AND role_id = ?',
+    [userId, roleId]
+  )
+
+  if (!existing) {
+    throw new Error('User does not have this role')
+  }
+
+  await queryMany(
+    'DELETE FROM user_roles WHERE user_id = ? AND role_id = ?',
+    [userId, roleId]
+  )
 
   return true
 }
@@ -139,5 +190,7 @@ export default {
   userGet,
   userCreate,
   userUpdate,
-  userDelete
+  userDelete,
+  userAssignRole,
+  userRemoveRole
 }

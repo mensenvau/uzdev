@@ -1,21 +1,14 @@
-import { query, queryOne, transaction } from '../../config/db.config.js'
+import { queryMany, queryOne, poolConnection } from '../../utils/db.util.js'
 import { hashPassword, comparePassword } from '../../utils/password.util.js'
 import {
-  generateAccessToken,
-  generateRefreshToken,
-  generateEmailVerificationToken,
-  verifyEmailVerificationToken,
-  verifyRefreshToken
+  jwtGenerateAccess,
+  jwtGenerateRefresh,
+  jwtGenerateEmailVerify,
+  jwtVerifyEmailVerify,
+  jwtVerifyRefresh
 } from '../../utils/jwt.util.js'
-import { ROLES } from '../../constants/roles.constant.js'
 
-/**
- * Sign up a new user
- * @param {Object} userData - User registration data
- * @returns {Promise<Object>} Created user and tokens
- */
 export async function authSignUp({ email, username, password }) {
-  // Check if user already exists
   const existingUser = await queryOne(
     'SELECT id FROM users WHERE email = ? OR username = ?',
     [email, username]
@@ -25,12 +18,12 @@ export async function authSignUp({ email, username, password }) {
     throw new Error('Email or username already exists')
   }
 
-  // Hash password
   const passwordHash = await hashPassword(password)
 
-  // Create user in transaction
-  const result = await transaction(async (conn) => {
-    // Insert user
+  const conn = await poolConnection.getConnection()
+  try {
+    await conn.beginTransaction()
+
     const [userResult] = await conn.execute(
       'INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)',
       [email, username, passwordHash]
@@ -38,10 +31,9 @@ export async function authSignUp({ email, username, password }) {
 
     const userId = userResult.insertId
 
-    // Assign default 'user' role
     const [roleResult] = await conn.execute(
       'SELECT id FROM roles WHERE name = ?',
-      [ROLES.USER]
+      ['user']
     )
 
     if (roleResult.length > 0) {
@@ -51,43 +43,37 @@ export async function authSignUp({ email, username, password }) {
       )
     }
 
-    return userId
-  })
+    await conn.commit()
 
-  // Get created user
-  const user = await queryOne(
-    'SELECT id, email, username, is_email_verified, created_at FROM users WHERE id = ?',
-    [result]
-  )
+    const user = await queryOne(
+      'SELECT id, email, username, is_email_verified, created_at FROM users WHERE id = ?',
+      [userId]
+    )
 
-  // Generate tokens
-  const accessToken = generateAccessToken({ userId: user.id })
-  const refreshToken = generateRefreshToken({ userId: user.id })
+    const accessToken = jwtGenerateAccess({ userId: user.id })
+    const refreshToken = jwtGenerateRefresh({ userId: user.id })
+    const emailVerificationToken = jwtGenerateEmailVerify(user.id)
 
-  // Generate email verification token
-  const emailVerificationToken = generateEmailVerificationToken(user.id)
+    await queryMany(
+      'INSERT INTO email_verification_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))',
+      [user.id, emailVerificationToken]
+    )
 
-  // Store email verification token
-  await query(
-    'INSERT INTO email_verification_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))',
-    [user.id, emailVerificationToken]
-  )
-
-  return {
-    user,
-    accessToken,
-    refreshToken,
-    emailVerificationToken
+    return {
+      user,
+      accessToken,
+      refreshToken,
+      emailVerificationToken
+    }
+  } catch (error) {
+    await conn.rollback()
+    throw error
+  } finally {
+    conn.release()
   }
 }
 
-/**
- * Sign in user with email/username and password
- * @param {Object} credentials - Login credentials
- * @returns {Promise<Object>} User and tokens
- */
 export async function authSignIn({ login, password }) {
-  // Find user by email or username
   const user = await queryOne(
     'SELECT id, email, username, password_hash, is_email_verified FROM users WHERE email = ? OR username = ?',
     [login, login]
@@ -97,18 +83,15 @@ export async function authSignIn({ login, password }) {
     throw new Error('Invalid credentials')
   }
 
-  // Check password
   const isPasswordValid = await comparePassword(password, user.password_hash)
 
   if (!isPasswordValid) {
     throw new Error('Invalid credentials')
   }
 
-  // Generate tokens
-  const accessToken = generateAccessToken({ userId: user.id })
-  const refreshToken = generateRefreshToken({ userId: user.id })
+  const accessToken = jwtGenerateAccess({ userId: user.id })
+  const refreshToken = jwtGenerateRefresh({ userId: user.id })
 
-  // Remove password hash from response
   delete user.password_hash
 
   return {
@@ -118,21 +101,17 @@ export async function authSignIn({ login, password }) {
   }
 }
 
-/**
- * Sign in with Google (placeholder - needs OAuth implementation)
- * @param {Object} googleData - Google user data
- * @returns {Promise<Object>} User and tokens
- */
 export async function authSignInWithGoogle({ googleId, email, username }) {
-  // Check if user exists with this Google ID
   let user = await queryOne(
     'SELECT id, email, username, is_email_verified FROM users WHERE google_id = ?',
     [googleId]
   )
 
   if (!user) {
-    // Create new user
-    const result = await transaction(async (conn) => {
+    const conn = await poolConnection.getConnection()
+    try {
+      await conn.beginTransaction()
+
       const [userResult] = await conn.execute(
         'INSERT INTO users (email, username, google_id, is_email_verified) VALUES (?, ?, ?, TRUE)',
         [email, username || email.split('@')[0], googleId]
@@ -140,10 +119,9 @@ export async function authSignInWithGoogle({ googleId, email, username }) {
 
       const userId = userResult.insertId
 
-      // Assign default 'user' role
       const [roleResult] = await conn.execute(
         'SELECT id FROM roles WHERE name = ?',
-        [ROLES.USER]
+        ['user']
       )
 
       if (roleResult.length > 0) {
@@ -153,18 +131,22 @@ export async function authSignInWithGoogle({ googleId, email, username }) {
         )
       }
 
-      return userId
-    })
+      await conn.commit()
 
-    user = await queryOne(
-      'SELECT id, email, username, is_email_verified FROM users WHERE id = ?',
-      [result]
-    )
+      user = await queryOne(
+        'SELECT id, email, username, is_email_verified FROM users WHERE id = ?',
+        [userId]
+      )
+    } catch (error) {
+      await conn.rollback()
+      throw error
+    } finally {
+      conn.release()
+    }
   }
 
-  // Generate tokens
-  const accessToken = generateAccessToken({ userId: user.id })
-  const refreshToken = generateRefreshToken({ userId: user.id })
+  const accessToken = jwtGenerateAccess({ userId: user.id })
+  const refreshToken = jwtGenerateRefresh({ userId: user.id })
 
   return {
     user,
@@ -173,20 +155,13 @@ export async function authSignInWithGoogle({ googleId, email, username }) {
   }
 }
 
-/**
- * Verify email with token
- * @param {string} token - Email verification token
- * @returns {Promise<boolean>}
- */
 export async function authVerifyEmail(token) {
-  // Verify token
-  const decoded = verifyEmailVerificationToken(token)
+  const decoded = jwtVerifyEmailVerify(token)
 
   if (!decoded) {
     throw new Error('Invalid or expired verification token')
   }
 
-  // Check if token exists in database
   const tokenRecord = await queryOne(
     'SELECT id, user_id FROM email_verification_tokens WHERE token = ? AND expires_at > NOW()',
     [token]
@@ -196,14 +171,12 @@ export async function authVerifyEmail(token) {
     throw new Error('Invalid or expired verification token')
   }
 
-  // Update user email verification status
-  await query(
+  await queryMany(
     'UPDATE users SET is_email_verified = TRUE WHERE id = ?',
     [tokenRecord.user_id]
   )
 
-  // Delete used token
-  await query(
+  await queryMany(
     'DELETE FROM email_verification_tokens WHERE id = ?',
     [tokenRecord.id]
   )
@@ -211,20 +184,13 @@ export async function authVerifyEmail(token) {
   return true
 }
 
-/**
- * Refresh access token
- * @param {string} refreshToken - Refresh token
- * @returns {Promise<Object>} New tokens
- */
 export async function authRefreshToken(refreshToken) {
-  // Verify refresh token
-  const decoded = verifyRefreshToken(refreshToken)
+  const decoded = jwtVerifyRefresh(refreshToken)
 
   if (!decoded) {
     throw new Error('Invalid or expired refresh token')
   }
 
-  // Check if user still exists
   const user = await queryOne(
     'SELECT id FROM users WHERE id = ?',
     [decoded.userId]
@@ -234,9 +200,8 @@ export async function authRefreshToken(refreshToken) {
     throw new Error('User not found')
   }
 
-  // Generate new tokens
-  const accessToken = generateAccessToken({ userId: user.id })
-  const newRefreshToken = generateRefreshToken({ userId: user.id })
+  const accessToken = jwtGenerateAccess({ userId: user.id })
+  const newRefreshToken = jwtGenerateRefresh({ userId: user.id })
 
   return {
     accessToken,
@@ -244,13 +209,7 @@ export async function authRefreshToken(refreshToken) {
   }
 }
 
-/**
- * Resend email verification
- * @param {number} userId - User ID
- * @returns {Promise<string>} New verification token
- */
 export async function authResendVerification(userId) {
-  // Check if user exists and is not verified
   const user = await queryOne(
     'SELECT id, is_email_verified FROM users WHERE id = ?',
     [userId]
@@ -264,17 +223,14 @@ export async function authResendVerification(userId) {
     throw new Error('Email already verified')
   }
 
-  // Delete old tokens
-  await query(
+  await queryMany(
     'DELETE FROM email_verification_tokens WHERE user_id = ?',
     [userId]
   )
 
-  // Generate new token
-  const emailVerificationToken = generateEmailVerificationToken(userId)
+  const emailVerificationToken = jwtGenerateEmailVerify(userId)
 
-  // Store new token
-  await query(
+  await queryMany(
     'INSERT INTO email_verification_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))',
     [userId, emailVerificationToken]
   )

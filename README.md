@@ -1,38 +1,35 @@
 # 🚀 Core App Boilerplate
 
-Professional, production-ready application boilerplate with advanced authentication, role-based access control, and dynamic form system.
+Production-ready application boilerplate with advanced authentication, role-based access control, and dynamic form system.
 
-## 🎯 Features
+## ✨ Features
 
-### ✅ Complete Authentication System
-- Username/Password authentication
-- Google OAuth support
-- Email verification
-- JWT access & refresh tokens
-- Password reset functionality
+- ✅ Complete authentication (username/password, Google OAuth, email verification)
+- ✅ Role-based access control with policies
+- ✅ Group system for contextual access
+- ✅ Advanced dynamic form system with scoring
+- ✅ Next.js 14 frontend with shadcn/ui
+- ✅ Docker Compose for easy deployment
+- ✅ Pure SQL (no ORM)
+- ✅ TypeScript support
 
-### 🔐 Advanced Authorization
-- **Role-Based Access Control (RBAC)**
-- **Policy System** - Granular permissions
-- **Group System** - Independent from roles for contextual access
-- Middleware-based protection
+## 🏗️ Tech Stack
 
-### 📋 Advanced Form System
-- Dynamic form builder
-- Multiple field types: text, number, select, checkbox, radio, textarea
-- **Table Select** - Pull options from any database table
-- **Scoring System** - Automatic score calculation
-- **Question/Check Mode** - For surveys vs. review workflows
-- **Flexible Access Control**:
-  - Role-based access
-  - Group-based access
-  - Public link generation (with expiration)
+**Backend:**
+- Node.js + Express
+- MySQL 8.0
+- JWT authentication
+- Bcrypt password hashing
 
-### 🏗️ Architecture
-- **Backend**: Node.js + Express.js
-- **Database**: MySQL (pure SQL, no ORM)
-- **Frontend**: Next.js 14 (App Router) + shadcn/ui + Tailwind CSS
-- **Process Management**: PM2
+**Frontend:**
+- Next.js 14 (App Router)
+- shadcn/ui components
+- Tailwind CSS
+- TypeScript
+
+**DevOps:**
+- Docker & Docker Compose
+- MySQL container
 
 ## 📂 Project Structure
 
@@ -40,106 +37,84 @@ Professional, production-ready application boilerplate with advanced authenticat
 .
 ├── backend/
 │   ├── src/
-│   │   ├── config/          # Configuration (env, database)
-│   │   ├── database/        # SQL schemas and seeds
-│   │   ├── routes/          # Feature modules
-│   │   │   ├── auth/
-│   │   │   ├── user/
-│   │   │   ├── role/
-│   │   │   ├── policy/
-│   │   │   ├── group/
-│   │   │   └── form/
+│   │   ├── routes/          # Feature modules (auth, user, role, policy, group, form)
 │   │   ├── middlewares/     # Auth & policy middlewares
-│   │   ├── utils/           # JWT, password, response helpers
-│   │   └── constants/       # Roles & policies
-│   ├── package.json
-│   └── ecosystem.config.cjs
+│   │   ├── utils/           # Utilities (db, jwt, password, response, async)
+│   │   ├── database/        # SQL schemas and seeds
+│   │   ├── app.js           # Express app
+│   │   └── server.js        # Server startup
+│   ├── Dockerfile
+│   └── package.json
 │
-└── frontend/
-    ├── app/                 # Next.js App Router
-    ├── components/          # React components
-    ├── services/            # API services
-    └── lib/                 # Utilities
+├── frontend/
+│   ├── app/                 # Next.js App Router
+│   ├── components/          # React components (UI + custom)
+│   ├── lib/                 # API client & utilities
+│   ├── Dockerfile
+│   └── package.json
+│
+├── docker-compose.yml
+└── .env.example
 ```
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Node.js >= 18
-- MySQL >= 8.0
-- npm or yarn
-
-### 1. Clone and Install
+### Option 1: Docker Compose (Recommended)
 
 ```bash
-# Install backend dependencies
+# Copy environment file
+cp .env.example .env
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+Access:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:3001
+- Health Check: http://localhost:3001/health
+
+### Option 2: Manual Setup
+
+**1. Database Setup**
+
+```bash
+# Start MySQL (via Docker or local installation)
+mysql -u root -p < backend/src/database/init.sql
+mysql -u root -p < backend/src/database/seed.sql
+```
+
+**2. Backend Setup**
+
+```bash
 cd backend
 npm install
+cp .env.example .env
+# Edit .env with your configuration
+npm run dev
+```
 
-# Install frontend dependencies (when ready)
+**3. Frontend Setup**
+
+```bash
 cd frontend
 npm install
-```
-
-### 2. Setup Database
-
-```bash
-# Create .env file in backend/
-cp backend/.env.example backend/.env
-
-# Edit .env with your database credentials
-# Then initialize database
-cd backend
-npm run db:reset
-```
-
-Default super admin credentials:
-- **Email**: admin@coreapp.com
-- **Username**: superadmin
-- **Password**: Admin@123
-
-### 3. Start Development Server
-
-```bash
-# Backend
-cd backend
+cp .env.local.example .env.local
 npm run dev
-
-# Or with PM2
-npm run pm2:dev
 ```
 
-Backend will run on http://localhost:3001
+## 🔐 Default Credentials
 
-## 📖 Database Schema
+After running database seeds:
 
-### Core Tables
+- **Email:** admin@coreapp.com
+- **Username:** superadmin
+- **Password:** Admin@123
 
-#### Users & Auth
-- `users` - User accounts
-- `email_verification_tokens` - Email verification
-- `password_reset_tokens` - Password reset
-
-#### Authorization
-- `roles` - User roles
-- `policies` - Permissions
-- `role_policies` - Role-policy assignments
-- `user_roles` - User-role assignments
-
-#### Groups
-- `groups` - User groups
-- `group_users` - Group members
-
-#### Forms
-- `forms` - Form definitions
-- `form_fields` - Form fields with types
-- `field_options` - Options for select/radio/checkbox
-- `field_table_sources` - Table select configurations
-- `form_access` - Universal access control
-- `form_responses` - Form submissions
-- `form_response_values` - Individual answers
-
-## 🔌 API Endpoints
+## 📖 API Endpoints
 
 ### Authentication
 ```
@@ -164,34 +139,28 @@ DELETE /api/users/:id
 ### Roles
 ```
 GET    /api/roles
-GET    /api/roles/:id
 POST   /api/roles
 PUT    /api/roles/:id
 DELETE /api/roles/:id
 POST   /api/roles/assign
-POST   /api/roles/remove
 ```
 
 ### Policies
 ```
 GET    /api/policies
-GET    /api/policies/:id
 POST   /api/policies
 PUT    /api/policies/:id
 DELETE /api/policies/:id
 POST   /api/policies/assign
-POST   /api/policies/remove
 ```
 
 ### Groups
 ```
 GET    /api/groups
-GET    /api/groups/:id
 POST   /api/groups
 PUT    /api/groups/:id
 DELETE /api/groups/:id
 POST   /api/groups/add-user
-POST   /api/groups/remove-user
 ```
 
 ### Forms
@@ -201,76 +170,118 @@ GET    /api/forms/:id
 POST   /api/forms
 PUT    /api/forms/:id
 DELETE /api/forms/:id
-POST   /api/forms/:id/fields
-POST   /api/forms/:id/access
-POST   /api/forms/:id/generate-link
-POST   /api/forms/:id/submit
+POST   /api/forms/:id/responses
 GET    /api/forms/:id/responses
 ```
 
-## 🛠️ PM2 Commands
+## 🎯 Database Schema
+
+**Core Tables:**
+- `users` - User accounts
+- `roles` - User roles (super_admin, admin, user, guest)
+- `policies` - Permissions (40+ policies)
+- `user_roles` - User-role assignments
+- `role_policies` - Role-policy assignments
+- `groups` - User groups
+- `group_users` - Group members
+- `forms` - Dynamic forms
+- `form_fields` - Form field definitions
+- `field_options` - Options for select/radio/checkbox
+- `form_responses` - Form submissions
+- `form_response_values` - Individual answer values
+
+All tables include: `id`, `created_at`, `updated_at`
+
+## 📝 Naming Conventions
+
+- **Functions:** `camelCase` (e.g., `authSignIn`, `userCreate`)
+- **Database:** `snake_case` (e.g., `user_id`, `created_at`)
+- **Files:** `kebab-case` (e.g., `auth.service.js`)
+- **No comments** - Clean, self-documenting code
+
+## 🐳 Docker Commands
 
 ```bash
-# Start with PM2
-npm run pm2:dev          # Development
-npm run pm2:prod         # Production
+# Start services
+docker-compose up -d
 
-# Manage
-npm run pm2:stop         # Stop
-npm run pm2:restart      # Restart
-npm run pm2:delete       # Delete
-npm run pm2:logs         # View logs
+# Stop services
+docker-compose down
+
+# View logs
+docker-compose logs -f backend
+docker-compose logs -f frontend
+
+# Restart a service
+docker-compose restart backend
+
+# Rebuild and start
+docker-compose up -d --build
+
+# Stop and remove volumes
+docker-compose down -v
 ```
 
-## 📝 Coding Standards
+## 🔧 Environment Variables
 
-### Naming Conventions
-- **Functions**: `camelCase` (e.g., `authSignIn`, `userCreate`)
-- **Variables**: `camelCase`
-- **Database**: `snake_case` (e.g., `user_id`, `created_at`)
-- **Files**: `kebab-case` or `dot.notation` (e.g., `auth.service.js`)
+See `.env.example` for all available variables.
 
-### Standard Table Columns
-Every table includes:
-```sql
-id BIGINT PRIMARY KEY AUTO_INCREMENT,
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-```
+**Required:**
+- `DB_PASSWORD` - MySQL root password
+- `JWT_SECRET` - JWT signing secret
+- `JWT_REFRESH_SECRET` - Refresh token secret
 
-## 🎯 Use Cases
+**Optional:**
+- `PORT` - Backend port (default: 3001)
+- `FRONTEND_PORT` - Frontend port (default: 3000)
+- `DB_HOST` - Database host (default: localhost)
+- `DB_NAME` - Database name (default: core_app)
 
-This boilerplate is perfect for:
+## 🎨 Form System
 
-- ✅ SaaS applications
-- ✅ Survey/Form platforms
-- ✅ Exam/Quiz systems
-- ✅ HR management systems
-- ✅ Audit/Inspection tools
-- ✅ Any app requiring granular permissions
+The advanced form system supports:
+
+- **Field Types:** text, number, select, checkbox, radio, textarea
+- **Table Select:** Pull options from any database table
+- **Scoring System:** Automatic score calculation
+- **Question/Check Mode:** Different workflows
+- **Access Control:** Role, group, or public link based
+- **Response Tracking:** Full submission history
 
 ## 🔒 Security Features
 
 - JWT-based authentication
-- Bcrypt password hashing
+- Bcrypt password hashing (10 rounds)
 - Helmet.js security headers
 - CORS configuration
 - SQL injection prevention (parameterized queries)
 - Policy-based authorization
 - Token expiration handling
 
-## 📚 Next Steps
+## 🚀 Deployment
 
-1. **Customize policies** in `backend/src/database/seed.sql`
-2. **Add email service** for verification emails
-3. **Implement Google OAuth** with credentials
-4. **Build frontend** with Next.js
-5. **Add more field types** to forms as needed
-6. **Deploy** to your preferred platform
+**Production checklist:**
+
+1. Update environment variables
+2. Change JWT secrets
+3. Set strong database password
+4. Configure CORS for production domain
+5. Enable HTTPS
+6. Set `NODE_ENV=production`
+
+## 📚 Use Cases
+
+Perfect for:
+- SaaS applications
+- Survey/Form platforms
+- Exam/Quiz systems
+- HR management systems
+- Audit/Inspection tools
+- Any app requiring granular permissions
 
 ## 🤝 Contributing
 
-This is a boilerplate project. Fork it and make it your own!
+Fork and customize for your needs!
 
 ## 📄 License
 
@@ -278,4 +289,4 @@ MIT
 
 ---
 
-**Built with ❤️ for developers who want to focus on business logic, not boilerplate.**
+**Built for developers who want to focus on business logic, not boilerplate.**

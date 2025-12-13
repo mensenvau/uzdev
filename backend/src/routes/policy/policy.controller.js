@@ -1,69 +1,61 @@
-import { policyList, policyGet, policyCreate, policyUpdate, policyDelete, policyAssignToRole, policyRemoveFromRole } from './policy.service.js'
+import asyncHandler from '../../utils/async.util.js'
 import { sendSuccess, sendError } from '../../utils/response.util.js'
+import {
+  policyList,
+  policyGet,
+  policyCreate,
+  policyUpdate,
+  policyDelete
+} from './policy.service.js'
 
-export async function list(req, res) {
-  try {
-    const policies = await policyList()
-    return sendSuccess(res, policies)
-  } catch (error) {
-    return sendError(res, error.message)
+export const list = asyncHandler(async (req, res) => {
+  const { limit, offset } = req.query
+  const result = await policyList({
+    limit: limit ? parseInt(limit) : 50,
+    offset: offset ? parseInt(offset) : 0
+  })
+  return sendSuccess(res, result, 'Policies retrieved successfully')
+})
+
+export const get = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  const policy = await policyGet(parseInt(id))
+  return sendSuccess(res, policy, 'Policy retrieved successfully')
+})
+
+export const create = asyncHandler(async (req, res) => {
+  const { name, description } = req.body
+
+  if (!name) {
+    return sendError(res, 'Name is required', 400)
   }
-}
 
-export async function get(req, res) {
-  try {
-    const policy = await policyGet(req.params.id)
-    return sendSuccess(res, policy)
-  } catch (error) {
-    return sendError(res, error.message, 404)
+  const policy = await policyCreate({ name, description })
+  return sendSuccess(res, policy, 'Policy created successfully', 201)
+})
+
+export const update = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  const { name, description } = req.body
+
+  if (!name) {
+    return sendError(res, 'Name is required', 400)
   }
-}
 
-export async function create(req, res) {
-  try {
-    const policy = await policyCreate(req.body)
-    return sendSuccess(res, policy, 'Policy created successfully', 201)
-  } catch (error) {
-    return sendError(res, error.message, 400)
-  }
-}
+  const policy = await policyUpdate(parseInt(id), { name, description })
+  return sendSuccess(res, policy, 'Policy updated successfully')
+})
 
-export async function update(req, res) {
-  try {
-    const policy = await policyUpdate(req.params.id, req.body)
-    return sendSuccess(res, policy, 'Policy updated successfully')
-  } catch (error) {
-    return sendError(res, error.message, 400)
-  }
-}
+export const remove = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  await policyDelete(parseInt(id))
+  return sendSuccess(res, null, 'Policy deleted successfully')
+})
 
-export async function deletePolicy(req, res) {
-  try {
-    await policyDelete(req.params.id)
-    return sendSuccess(res, null, 'Policy deleted successfully')
-  } catch (error) {
-    return sendError(res, error.message, 404)
-  }
+export default {
+  list,
+  get,
+  create,
+  update,
+  remove
 }
-
-export async function assignToRole(req, res) {
-  try {
-    const { roleId, policyId } = req.body
-    await policyAssignToRole(roleId, policyId)
-    return sendSuccess(res, null, 'Policy assigned to role successfully')
-  } catch (error) {
-    return sendError(res, error.message, 400)
-  }
-}
-
-export async function removeFromRole(req, res) {
-  try {
-    const { roleId, policyId } = req.body
-    await policyRemoveFromRole(roleId, policyId)
-    return sendSuccess(res, null, 'Policy removed from role successfully')
-  } catch (error) {
-    return sendError(res, error.message, 400)
-  }
-}
-
-export default { list, get, create, update, deletePolicy, assignToRole, removeFromRole }

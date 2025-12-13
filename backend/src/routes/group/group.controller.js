@@ -1,69 +1,83 @@
-import { groupList, groupGet, groupCreate, groupUpdate, groupDelete, groupAddUser, groupRemoveUser } from './group.service.js'
+import asyncHandler from '../../utils/async.util.js'
 import { sendSuccess, sendError } from '../../utils/response.util.js'
+import {
+  groupList,
+  groupGet,
+  groupCreate,
+  groupUpdate,
+  groupDelete,
+  groupAddUser,
+  groupRemoveUser
+} from './group.service.js'
 
-export async function list(req, res) {
-  try {
-    const groups = await groupList()
-    return sendSuccess(res, groups)
-  } catch (error) {
-    return sendError(res, error.message)
+export const list = asyncHandler(async (req, res) => {
+  const { limit, offset } = req.query
+  const result = await groupList({
+    limit: limit ? parseInt(limit) : 50,
+    offset: offset ? parseInt(offset) : 0
+  })
+  return sendSuccess(res, result, 'Groups retrieved successfully')
+})
+
+export const get = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  const group = await groupGet(parseInt(id))
+  return sendSuccess(res, group, 'Group retrieved successfully')
+})
+
+export const create = asyncHandler(async (req, res) => {
+  const { name, description, userIds } = req.body
+
+  if (!name) {
+    return sendError(res, 'Name is required', 400)
   }
-}
 
-export async function get(req, res) {
-  try {
-    const group = await groupGet(req.params.id)
-    return sendSuccess(res, group)
-  } catch (error) {
-    return sendError(res, error.message, 404)
+  const group = await groupCreate({ name, description, userIds })
+  return sendSuccess(res, group, 'Group created successfully', 201)
+})
+
+export const update = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  const { name, description } = req.body
+
+  if (!name) {
+    return sendError(res, 'Name is required', 400)
   }
-}
 
-export async function create(req, res) {
-  try {
-    const group = await groupCreate(req.body)
-    return sendSuccess(res, group, 'Group created successfully', 201)
-  } catch (error) {
-    return sendError(res, error.message, 400)
+  const group = await groupUpdate(parseInt(id), { name, description })
+  return sendSuccess(res, group, 'Group updated successfully')
+})
+
+export const remove = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  await groupDelete(parseInt(id))
+  return sendSuccess(res, null, 'Group deleted successfully')
+})
+
+export const addUser = asyncHandler(async (req, res) => {
+  const { id } = req.params
+  const { userId } = req.body
+
+  if (!userId) {
+    return sendError(res, 'User ID is required', 400)
   }
-}
 
-export async function update(req, res) {
-  try {
-    const group = await groupUpdate(req.params.id, req.body)
-    return sendSuccess(res, group, 'Group updated successfully')
-  } catch (error) {
-    return sendError(res, error.message, 400)
-  }
-}
+  await groupAddUser(parseInt(id), parseInt(userId))
+  return sendSuccess(res, null, 'User added successfully')
+})
 
-export async function deleteGroup(req, res) {
-  try {
-    await groupDelete(req.params.id)
-    return sendSuccess(res, null, 'Group deleted successfully')
-  } catch (error) {
-    return sendError(res, error.message, 404)
-  }
-}
+export const removeUser = asyncHandler(async (req, res) => {
+  const { id, userId } = req.params
+  await groupRemoveUser(parseInt(id), parseInt(userId))
+  return sendSuccess(res, null, 'User removed successfully')
+})
 
-export async function addUser(req, res) {
-  try {
-    const { groupId, userId } = req.body
-    await groupAddUser(groupId, userId)
-    return sendSuccess(res, null, 'User added to group successfully')
-  } catch (error) {
-    return sendError(res, error.message, 400)
-  }
+export default {
+  list,
+  get,
+  create,
+  update,
+  remove,
+  addUser,
+  removeUser
 }
-
-export async function removeUser(req, res) {
-  try {
-    const { groupId, userId } = req.body
-    await groupRemoveUser(groupId, userId)
-    return sendSuccess(res, null, 'User removed from group successfully')
-  } catch (error) {
-    return sendError(res, error.message, 400)
-  }
-}
-
-export default { list, get, create, update, deleteGroup, addUser, removeUser }
