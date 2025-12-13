@@ -1,61 +1,74 @@
-import asyncHandler from '../../utils/async.util.js'
-import { sendSuccess, sendError } from '../../utils/response.util.js'
-import {
-  policyList,
-  policyGet,
-  policyCreate,
-  policyUpdate,
-  policyDelete
-} from './policy.service.js'
+import { asyncHandler } from '../../utils/async.util.js'
+import { sendSuccess, sendError, sendValidationError } from '../../utils/response.util.js'
+import * as policyService from './policy.service.js'
 
 export const list = asyncHandler(async (req, res) => {
-  const { limit, offset } = req.query
-  const result = await policyList({
-    limit: limit ? parseInt(limit) : 50,
-    offset: offset ? parseInt(offset) : 0
-  })
-  return sendSuccess(res, result, 'Policies retrieved successfully')
+  const policies = await policyService.findAllPolicies()
+  sendSuccess(res, { policies })
 })
 
 export const get = asyncHandler(async (req, res) => {
-  const { id } = req.params
-  const policy = await policyGet(parseInt(id))
-  return sendSuccess(res, policy, 'Policy retrieved successfully')
+  const policy = await policyService.findPolicyById(req.params.id)
+  if (!policy) {
+    return sendError(res, 'Policy not found', 404)
+  }
+  sendSuccess(res, { policy })
 })
 
 export const create = asyncHandler(async (req, res) => {
   const { name, description } = req.body
 
   if (!name) {
-    return sendError(res, 'Name is required', 400)
+    return sendValidationError(res, { name: 'Name is required' })
   }
 
-  const policy = await policyCreate({ name, description })
-  return sendSuccess(res, policy, 'Policy created successfully', 201)
+  const policyId = await policyService.createPolicy(name, description)
+  const policy = await policyService.findPolicyById(policyId)
+  sendSuccess(res, { policy }, 'Policy created successfully', 201)
 })
 
 export const update = asyncHandler(async (req, res) => {
-  const { id } = req.params
-  const { name, description } = req.body
+  const policy = await policyService.updatePolicy(req.params.id, req.body)
+  if (!policy) {
+    return sendError(res, 'Policy not found or no fields to update', 400)
+  }
+  sendSuccess(res, { policy }, 'Policy updated successfully')
+})
 
-  if (!name) {
-    return sendError(res, 'Name is required', 400)
+export const deletePolicy = asyncHandler(async (req, res) => {
+  const deleted = await policyService.deletePolicy(req.params.id)
+  if (!deleted) {
+    return sendError(res, 'Policy not found', 404)
+  }
+  sendSuccess(res, null, 'Policy deleted successfully')
+})
+
+export const assignToRole = asyncHandler(async (req, res) => {
+  const { roleId, policyId } = req.body
+
+  if (!roleId || !policyId) {
+    return sendValidationError(res, {
+      roleId: !roleId ? 'Role ID is required' : undefined,
+      policyId: !policyId ? 'Policy ID is required' : undefined
+    })
   }
 
-  const policy = await policyUpdate(parseInt(id), { name, description })
-  return sendSuccess(res, policy, 'Policy updated successfully')
+  await policyService.assignPolicyToRole(roleId, policyId)
+  sendSuccess(res, null, 'Policy assigned to role successfully')
 })
 
-export const remove = asyncHandler(async (req, res) => {
-  const { id } = req.params
-  await policyDelete(parseInt(id))
-  return sendSuccess(res, null, 'Policy deleted successfully')
+export const removeFromRole = asyncHandler(async (req, res) => {
+  const { roleId, policyId } = req.body
+
+  if (!roleId || !policyId) {
+    return sendValidationError(res, {
+      roleId: !roleId ? 'Role ID is required' : undefined,
+      policyId: !policyId ? 'Policy ID is required' : undefined
+    })
+  }
+
+  await policyService.removePolicyFromRole(roleId, policyId)
+  sendSuccess(res, null, 'Policy removed from role successfully')
 })
 
-export default {
-  list,
-  get,
-  create,
-  update,
-  remove
-}
+export default { list, get, create, update, deletePolicy, assignToRole, removeFromRole }

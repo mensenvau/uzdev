@@ -1,296 +1,259 @@
-import { queryMany, queryOne, poolConnection } from '../../utils/db.util.js'
+import { queryOne, queryMany } from '../../utils/db.util.js'
+import { jwtGenerateFormAccess } from '../../utils/jwt.util.js'
 
-export async function formList({ limit = 50, offset = 0 }) {
-  const forms = await queryMany(
-    `SELECT f.id, f.name, f.description, f.is_active, f.created_at, f.updated_at,
-     u.username as created_by_username,
-     COUNT(DISTINCT fr.id) as response_count
-     FROM forms f
-     LEFT JOIN users u ON f.created_by = u.id
-     LEFT JOIN form_responses fr ON f.id = fr.form_id
-     GROUP BY f.id
-     ORDER BY f.created_at DESC
-     LIMIT ? OFFSET ?`,
-    [limit, offset]
+export async function createForm(name, description, createdBy) {
+  const result = await queryMany(
+    'INSERT INTO forms (name, description, created_by) VALUES (?, ?, ?)',
+    [name, description, createdBy]
   )
-
-  const total = await queryOne('SELECT COUNT(*) as count FROM forms')
-
-  return {
-    forms,
-    total: total.count,
-    limit,
-    offset
-  }
+  return result.insertId
 }
 
-export async function formGet(formId) {
-  const form = await queryOne(
-    `SELECT f.id, f.name, f.description, f.is_active, f.created_by, f.created_at, f.updated_at
-     FROM forms f
-     WHERE f.id = ?`,
-    [formId]
-  )
-
-  if (!form) {
-    throw new Error('Form not found')
-  }
+export async function findFormById(formId) {
+  const form = await queryOne('SELECT * FROM forms WHERE id = ?', [formId])
+  if (!form) return null
 
   const fields = await queryMany(
-    `SELECT ff.id, ff.field_key, ff.label, ff.field_type, ff.mode, ff.is_required, ff.field_order
-     FROM form_fields ff
-     WHERE ff.form_id = ?
-     ORDER BY ff.field_order`,
+    'SELECT * FROM form_fields WHERE form_id = ? ORDER BY field_order ASC',
     [formId]
   )
 
   for (const field of fields) {
     if (['select', 'checkbox', 'radio'].includes(field.field_type)) {
       field.options = await queryMany(
-        `SELECT id, value, label, score, option_order
-         FROM field_options
-         WHERE field_id = ?
-         ORDER BY option_order`,
+        'SELECT * FROM field_options WHERE field_id = ? ORDER BY option_order ASC',
         [field.id]
       )
     }
 
     if (field.field_type === 'table_select') {
       field.tableSource = await queryOne(
-        `SELECT source_table, source_value_column, source_label_column
-         FROM field_table_sources
-         WHERE field_id = ?`,
+        'SELECT * FROM field_table_sources WHERE field_id = ?',
         [field.id]
       )
     }
   }
 
   const access = await queryMany(
-    `SELECT id, access_type, access_value, expires_at
-     FROM form_access
-     WHERE form_id = ?`,
+    'SELECT * FROM form_access WHERE form_id = ?',
     [formId]
   )
 
-  return {
-    ...form,
-    fields,
-    access
-  }
+  return { ...form, fields, access }
 }
 
-export async function formCreate({ name, description, createdBy, fields = [], access = [] }) {
-  const conn = await poolConnection.getConnection()
-  try {
-    await conn.beginTransaction()
-
-    const [formResult] = await conn.execute(
-      'INSERT INTO forms (name, description, created_by, is_active) VALUES (?, ?, ?, TRUE)',
-      [name, description, createdBy]
-    )
-
-    const formId = formResult.insertId
-
-    for (let i = 0; i < fields.length; i++) {
-      const field = fields[i]
-      const [fieldResult] = await conn.execute(
-        `INSERT INTO form_fields (form_id, field_key, label, field_type, mode, is_required, field_order)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [formId, field.field_key, field.label, field.field_type, field.mode || 'question', field.is_required || false, i]
-      )
-
-      const fieldId = fieldResult.insertId
-
-      if (field.options && field.options.length > 0) {
-        for (let j = 0; j < field.options.length; j++) {
-          const option = field.options[j]
-          await conn.execute(
-            `INSERT INTO field_options (field_id, value, label, score, option_order)
-             VALUES (?, ?, ?, ?, ?)`,
-            [fieldId, option.value, option.label, option.score || 0, j]
-          )
-        }
-      }
-
-      if (field.tableSource) {
-        await conn.execute(
-          `INSERT INTO field_table_sources (field_id, source_table, source_value_column, source_label_column)
-           VALUES (?, ?, ?, ?)`,
-          [fieldId, field.tableSource.source_table, field.tableSource.source_value_column, field.tableSource.source_label_column]
-        )
-      }
-    }
-
-    for (const acc of access) {
-      await conn.execute(
-        `INSERT INTO form_access (form_id, access_type, access_value, expires_at)
-         VALUES (?, ?, ?, ?)`,
-        [formId, acc.access_type, acc.access_value, acc.expires_at || null]
-      )
-    }
-
-    await conn.commit()
-
-    return await formGet(formId)
-  } catch (error) {
-    await conn.rollback()
-    throw error
-  } finally {
-    conn.release()
-  }
+export async function findAllForms(userId) {
+  return await queryMany(
+    `SELECT DISTINCT f.*
+     FROM forms f
+     LEFT JOIN form_access fa ON f.id = fa.form_id
+     LEFT JOIN user_roles ur ON fa.access_type = 'role' AND fa.access_value = ur.role_id
+     LEFT JOIN group_users gu ON fa.access_type = 'group' AND fa.access_value = gu.group_id
+     WHERE f.created_by = ?
+        OR ur.user_id = ?
+        OR gu.user_id = ?
+        OR fa.access_type = 'link'
+     ORDER BY f.created_at DESC`,
+    [userId, userId, userId]
+  )
 }
 
-export async function formUpdate(formId, { name, description, is_active }) {
-  const form = await queryOne('SELECT id FROM forms WHERE id = ?', [formId])
+export async function updateForm(formId, { name, description, isActive }) {
+  const updates = []
+  const params = []
 
-  if (!form) {
-    throw new Error('Form not found')
+  if (name) {
+    updates.push('name = ?')
+    params.push(name)
   }
 
-  await queryMany(
-    'UPDATE forms SET name = ?, description = ?, is_active = ? WHERE id = ?',
-    [name, description, is_active, formId]
+  if (description !== undefined) {
+    updates.push('description = ?')
+    params.push(description)
+  }
+
+  if (isActive !== undefined) {
+    updates.push('is_active = ?')
+    params.push(isActive)
+  }
+
+  if (updates.length === 0) return null
+
+  params.push(formId)
+  await queryMany(`UPDATE forms SET ${updates.join(', ')} WHERE id = ?`, params)
+  return await findFormById(formId)
+}
+
+export async function deleteForm(formId) {
+  const result = await queryMany('DELETE FROM forms WHERE id = ?', [formId])
+  return result.affectedRows > 0
+}
+
+export async function addFieldToForm(formId, fieldData) {
+  const { fieldKey, label, fieldType, mode, isRequired, fieldOrder, options, tableSource } = fieldData
+
+  const result = await queryMany(
+    'INSERT INTO form_fields (form_id, field_key, label, field_type, mode, is_required, field_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [formId, fieldKey, label, fieldType, mode || 'question', isRequired || false, fieldOrder || 0]
   )
 
-  return await formGet(formId)
-}
+  const fieldId = result.insertId
 
-export async function formDelete(formId) {
-  const form = await queryOne('SELECT id FROM forms WHERE id = ?', [formId])
-
-  if (!form) {
-    throw new Error('Form not found')
+  if (options && ['select', 'checkbox', 'radio'].includes(fieldType)) {
+    for (let i = 0; i < options.length; i++) {
+      const opt = options[i]
+      await queryMany(
+        'INSERT INTO field_options (field_id, value, label, score, option_order) VALUES (?, ?, ?, ?, ?)',
+        [fieldId, opt.value, opt.label, opt.score || 0, i]
+      )
+    }
   }
 
-  await queryMany('DELETE FROM forms WHERE id = ?', [formId])
+  if (tableSource && fieldType === 'table_select') {
+    await queryMany(
+      'INSERT INTO field_table_sources (field_id, source_table, source_value_column, source_label_column) VALUES (?, ?, ?, ?)',
+      [fieldId, tableSource.table, tableSource.valueColumn, tableSource.labelColumn]
+    )
+  }
 
+  return fieldId
+}
+
+export async function assignAccessToForm(formId, accessType, accessValue, expiresAt) {
+  await queryMany(
+    'INSERT INTO form_access (form_id, access_type, access_value, expires_at) VALUES (?, ?, ?, ?)',
+    [formId, accessType, accessValue, expiresAt]
+  )
   return true
 }
 
-export async function formResponseCreate({ formId, userId, values }) {
-  const form = await queryOne('SELECT id FROM forms WHERE id = ? AND is_active = TRUE', [formId])
+export async function generateFormLink(formId, expiresAt = null) {
+  const token = jwtGenerateFormAccess(formId, expiresAt)
 
-  if (!form) {
-    throw new Error('Form not found or inactive')
+  await queryMany(
+    'INSERT INTO form_access (form_id, access_type, access_value, expires_at) VALUES (?, ?, ?, ?)',
+    [formId, 'link', token, expiresAt]
+  )
+
+  return token
+}
+
+export async function checkFormAccess(formId, userId = null, token = null) {
+  if (userId) {
+    const form = await queryOne(
+      'SELECT id FROM forms WHERE id = ? AND created_by = ?',
+      [formId, userId]
+    )
+    if (form) return true
+
+    const roleAccess = await queryMany(
+      `SELECT fa.id
+       FROM form_access fa
+       JOIN user_roles ur ON fa.access_value = ur.role_id
+       WHERE fa.form_id = ? AND fa.access_type = 'role' AND ur.user_id = ?`,
+      [formId, userId]
+    )
+    if (roleAccess.length > 0) return true
+
+    const groupAccess = await queryMany(
+      `SELECT fa.id
+       FROM form_access fa
+       JOIN group_users gu ON fa.access_value = gu.group_id
+       WHERE fa.form_id = ? AND fa.access_type = 'group' AND gu.user_id = ?`,
+      [formId, userId]
+    )
+    if (groupAccess.length > 0) return true
   }
 
-  const conn = await poolConnection.getConnection()
-  try {
-    await conn.beginTransaction()
+  if (token) {
+    const tokenAccess = await queryOne(
+      `SELECT id FROM form_access
+       WHERE form_id = ? AND access_type = 'link' AND access_value = ?
+       AND (expires_at IS NULL OR expires_at > NOW())`,
+      [formId, token]
+    )
+    if (tokenAccess) return true
+  }
 
-    const [responseResult] = await conn.execute(
-      'INSERT INTO form_responses (form_id, user_id, status) VALUES (?, ?, ?)',
-      [formId, userId || null, 'draft']
+  return false
+}
+
+export async function submitFormResponse(formId, userId, answers) {
+  const result = await queryMany(
+    'INSERT INTO form_responses (form_id, user_id, status) VALUES (?, ?, ?)',
+    [formId, userId, 'submitted']
+  )
+
+  const responseId = result.insertId
+  let totalScore = 0
+
+  for (const answer of answers) {
+    let score = 0
+
+    const field = await queryOne(
+      'SELECT field_type FROM form_fields WHERE id = ?',
+      [answer.fieldId]
     )
 
-    const responseId = responseResult.insertId
-
-    let totalScore = 0
-
-    for (const val of values) {
-      await conn.execute(
-        `INSERT INTO form_response_values (response_id, field_id, value, score)
-         VALUES (?, ?, ?, ?)`,
-        [responseId, val.field_id, val.value, val.score || 0]
+    if (field && ['select', 'radio', 'checkbox'].includes(field.field_type)) {
+      const option = await queryOne(
+        'SELECT score FROM field_options WHERE field_id = ? AND value = ?',
+        [answer.fieldId, answer.value]
       )
-      totalScore += val.score || 0
+      if (option) {
+        score = option.score
+      }
     }
 
-    await conn.execute(
-      'UPDATE form_responses SET total_score = ? WHERE id = ?',
-      [totalScore, responseId]
+    await queryMany(
+      'INSERT INTO form_response_values (response_id, field_id, value, score) VALUES (?, ?, ?, ?)',
+      [responseId, answer.fieldId, answer.value, score]
     )
 
-    await conn.commit()
-
-    return await formResponseGet(responseId)
-  } catch (error) {
-    await conn.rollback()
-    throw error
-  } finally {
-    conn.release()
-  }
-}
-
-export async function formResponseGet(responseId) {
-  const response = await queryOne(
-    `SELECT fr.id, fr.form_id, fr.user_id, fr.total_score, fr.status, fr.created_at, fr.updated_at,
-     f.name as form_name,
-     u.username as user_username
-     FROM form_responses fr
-     JOIN forms f ON fr.form_id = f.id
-     LEFT JOIN users u ON fr.user_id = u.id
-     WHERE fr.id = ?`,
-    [responseId]
-  )
-
-  if (!response) {
-    throw new Error('Response not found')
-  }
-
-  const values = await queryMany(
-    `SELECT frv.id, frv.field_id, frv.value, frv.score,
-     ff.field_key, ff.label
-     FROM form_response_values frv
-     JOIN form_fields ff ON frv.field_id = ff.id
-     WHERE frv.response_id = ?`,
-    [responseId]
-  )
-
-  return {
-    ...response,
-    values
-  }
-}
-
-export async function formResponseList({ formId, limit = 50, offset = 0 }) {
-  const responses = await queryMany(
-    `SELECT fr.id, fr.user_id, fr.total_score, fr.status, fr.created_at,
-     u.username as user_username
-     FROM form_responses fr
-     LEFT JOIN users u ON fr.user_id = u.id
-     WHERE fr.form_id = ?
-     ORDER BY fr.created_at DESC
-     LIMIT ? OFFSET ?`,
-    [formId, limit, offset]
-  )
-
-  const total = await queryOne(
-    'SELECT COUNT(*) as count FROM form_responses WHERE form_id = ?',
-    [formId]
-  )
-
-  return {
-    responses,
-    total: total.count,
-    limit,
-    offset
-  }
-}
-
-export async function formResponseUpdateStatus(responseId, status) {
-  const response = await queryOne('SELECT id FROM form_responses WHERE id = ?', [responseId])
-
-  if (!response) {
-    throw new Error('Response not found')
+    totalScore += score
   }
 
   await queryMany(
-    'UPDATE form_responses SET status = ? WHERE id = ?',
-    [status, responseId]
+    'UPDATE form_responses SET total_score = ? WHERE id = ?',
+    [totalScore, responseId]
   )
 
-  return await formResponseGet(responseId)
+  return responseId
+}
+
+export async function findFormResponses(formId) {
+  const responses = await queryMany(
+    `SELECT r.*, u.username, u.email
+     FROM form_responses r
+     LEFT JOIN users u ON r.user_id = u.id
+     WHERE r.form_id = ?
+     ORDER BY r.created_at DESC`,
+    [formId]
+  )
+
+  for (const response of responses) {
+    response.values = await queryMany(
+      `SELECT rv.*, ff.field_key, ff.label
+       FROM form_response_values rv
+       JOIN form_fields ff ON rv.field_id = ff.id
+       WHERE rv.response_id = ?`,
+      [response.id]
+    )
+  }
+
+  return responses
 }
 
 export default {
-  formList,
-  formGet,
-  formCreate,
-  formUpdate,
-  formDelete,
-  formResponseCreate,
-  formResponseGet,
-  formResponseList,
-  formResponseUpdateStatus
+  createForm,
+  findFormById,
+  findAllForms,
+  updateForm,
+  deleteForm,
+  addFieldToForm,
+  assignAccessToForm,
+  generateFormLink,
+  checkFormAccess,
+  submitFormResponse,
+  findFormResponses
 }

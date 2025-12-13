@@ -1,95 +1,69 @@
-import { queryMany, queryOne } from '../../utils/db.util.js'
+import { queryOne, queryMany } from '../../utils/db.util.js'
 
-export async function policyList({ limit = 50, offset = 0 }) {
-  const policies = await queryMany(
-    `SELECT id, name, description, created_at, updated_at
-     FROM policies
-     ORDER BY created_at DESC
-     LIMIT ? OFFSET ?`,
-    [limit, offset]
-  )
-
-  const total = await queryOne('SELECT COUNT(*) as count FROM policies')
-
-  return {
-    policies,
-    total: total.count,
-    limit,
-    offset
-  }
+export async function findAllPolicies() {
+  return await queryMany('SELECT * FROM policies ORDER BY name ASC')
 }
 
-export async function policyGet(policyId) {
-  const policy = await queryOne(
-    'SELECT id, name, description, created_at, updated_at FROM policies WHERE id = ?',
-    [policyId]
-  )
-
-  if (!policy) {
-    throw new Error('Policy not found')
-  }
-
-  return policy
+export async function findPolicyById(id) {
+  return await queryOne('SELECT * FROM policies WHERE id = ?', [id])
 }
 
-export async function policyCreate({ name, description }) {
-  const existingPolicy = await queryOne(
-    'SELECT id FROM policies WHERE name = ?',
-    [name]
-  )
-
-  if (existingPolicy) {
-    throw new Error('Policy with this name already exists')
-  }
-
-  const [result] = await queryMany(
+export async function createPolicy(name, description) {
+  const result = await queryMany(
     'INSERT INTO policies (name, description) VALUES (?, ?)',
     [name, description]
   )
-
-  return await policyGet(result.insertId)
+  return result.insertId
 }
 
-export async function policyUpdate(policyId, { name, description }) {
-  const policy = await queryOne('SELECT id FROM policies WHERE id = ?', [policyId])
+export async function updatePolicy(id, { name, description }) {
+  const updates = []
+  const params = []
 
-  if (!policy) {
-    throw new Error('Policy not found')
+  if (name) {
+    updates.push('name = ?')
+    params.push(name)
   }
 
-  const existingPolicy = await queryOne(
-    'SELECT id FROM policies WHERE name = ? AND id != ?',
-    [name, policyId]
-  )
-
-  if (existingPolicy) {
-    throw new Error('Policy with this name already exists')
+  if (description !== undefined) {
+    updates.push('description = ?')
+    params.push(description)
   }
 
+  if (updates.length === 0) return null
+
+  params.push(id)
+  await queryMany(`UPDATE policies SET ${updates.join(', ')} WHERE id = ?`, params)
+  return await findPolicyById(id)
+}
+
+export async function deletePolicy(id) {
+  const result = await queryMany('DELETE FROM policies WHERE id = ?', [id])
+  return result.affectedRows > 0
+}
+
+export async function assignPolicyToRole(roleId, policyId) {
   await queryMany(
-    'UPDATE policies SET name = ?, description = ? WHERE id = ?',
-    [name, description, policyId]
+    'INSERT IGNORE INTO role_policies (role_id, policy_id) VALUES (?, ?)',
+    [roleId, policyId]
   )
-
-  return await policyGet(policyId)
+  return true
 }
 
-export async function policyDelete(policyId) {
-  const policy = await queryOne('SELECT id FROM policies WHERE id = ?', [policyId])
-
-  if (!policy) {
-    throw new Error('Policy not found')
-  }
-
-  await queryMany('DELETE FROM policies WHERE id = ?', [policyId])
-
+export async function removePolicyFromRole(roleId, policyId) {
+  await queryMany(
+    'DELETE FROM role_policies WHERE role_id = ? AND policy_id = ?',
+    [roleId, policyId]
+  )
   return true
 }
 
 export default {
-  policyList,
-  policyGet,
-  policyCreate,
-  policyUpdate,
-  policyDelete
+  findAllPolicies,
+  findPolicyById,
+  createPolicy,
+  updatePolicy,
+  deletePolicy,
+  assignPolicyToRole,
+  removePolicyFromRole
 }

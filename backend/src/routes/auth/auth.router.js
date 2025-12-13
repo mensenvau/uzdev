@@ -1,23 +1,13 @@
 import express from 'express'
+import * as authController from './auth.controller.js'
 import { authMiddleware } from '../../middlewares/auth.middleware.js'
-import {
-  signUp,
-  signIn,
-  signInWithGoogle,
-  verifyEmail,
-  refreshToken,
-  resendVerification,
-  getMe
-} from './auth.controller.js'
 
 const router = express.Router()
 
-router.post('/signup', signUp)
-router.post('/signin', signIn)
-router.post('/google', signInWithGoogle)
-router.post('/verify-email', verifyEmail)
-router.post('/refresh', refreshToken)
-router.post('/resend-verification', authMiddleware, resendVerification)
-router.get('/me', authMiddleware, getMe)
+router.post('/signup', authController.signUp)
+router.post('/signin', authController.signIn)
+router.post('/google', authController.signInWithGoogle)
+router.post('/refresh-token', authController.refreshToken)
+router.get('/me', authMiddleware, authController.getMe)
 
 export default router

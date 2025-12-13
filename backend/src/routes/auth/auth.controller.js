@@ -1,86 +1,100 @@
-import asyncHandler from '../../utils/async.util.js'
-import { sendSuccess, sendError } from '../../utils/response.util.js'
-import {
-  authSignUp,
-  authSignIn,
-  authSignInWithGoogle,
-  authVerifyEmail,
-  authRefreshToken,
-  authResendVerification
-} from './auth.service.js'
+import { asyncHandler } from '../../utils/async.util.js'
+import { sendSuccess, sendError, sendValidationError } from '../../utils/response.util.js'
+import * as authService from './auth.service.js'
 
 export const signUp = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body
 
   if (!email || !username || !password) {
-    return sendError(res, 'Email, username, and password are required', 400)
+    return sendValidationError(res, {
+      email: !email ? 'Email is required' : undefined,
+      username: !username ? 'Username is required' : undefined,
+      password: !password ? 'Password is required' : undefined
+    })
   }
 
-  const result = await authSignUp({ email, username, password })
-  return sendSuccess(res, result, 'User created successfully', 201)
+  const existingUser = await authService.findUserByEmail(email)
+  if (existingUser) {
+    return sendError(res, 'Email already registered', 400)
+  }
+
+  const userId = await authService.createUser(email, username, password)
+  const tokens = await authService.generateTokens(userId)
+  const user = await authService.findUserById(userId)
+
+  sendSuccess(res, { user, ...tokens }, 'User registered successfully', 201)
 })
 
 export const signIn = asyncHandler(async (req, res) => {
-  const { login, password } = req.body
+  const { email, password } = req.body
 
-  if (!login || !password) {
-    return sendError(res, 'Login and password are required', 400)
+  if (!email || !password) {
+    return sendValidationError(res, {
+      email: !email ? 'Email is required' : undefined,
+      password: !password ? 'Password is required' : undefined
+    })
   }
 
-  const result = await authSignIn({ login, password })
-  return sendSuccess(res, result, 'Sign in successful')
+  const user = await authService.findUserByEmail(email)
+  if (!user) {
+    return sendError(res, 'Invalid credentials', 401)
+  }
+
+  const isValidPassword = await authService.verifyPassword(password, user.password)
+  if (!isValidPassword) {
+    return sendError(res, 'Invalid credentials', 401)
+  }
+
+  const tokens = await authService.generateTokens(user.id)
+  const userData = await authService.findUserById(user.id)
+
+  sendSuccess(res, { user: userData, ...tokens }, 'Signed in successfully')
 })
 
 export const signInWithGoogle = asyncHandler(async (req, res) => {
-  const { googleId, email, username } = req.body
+  const { googleId, email, name } = req.body
 
   if (!googleId || !email) {
-    return sendError(res, 'Google ID and email are required', 400)
+    return sendValidationError(res, {
+      googleId: !googleId ? 'Google ID is required' : undefined,
+      email: !email ? 'Email is required' : undefined
+    })
   }
 
-  const result = await authSignInWithGoogle({ googleId, email, username })
-  return sendSuccess(res, result, 'Google sign in successful')
-})
+  const user = await authService.findOrCreateGoogleUser(googleId, email, name)
+  const tokens = await authService.generateTokens(user.id)
+  const userData = await authService.findUserById(user.id)
 
-export const verifyEmail = asyncHandler(async (req, res) => {
-  const { token } = req.body
-
-  if (!token) {
-    return sendError(res, 'Token is required', 400)
-  }
-
-  await authVerifyEmail(token)
-  return sendSuccess(res, null, 'Email verified successfully')
+  sendSuccess(res, { user: userData, ...tokens }, 'Signed in with Google successfully')
 })
 
 export const refreshToken = asyncHandler(async (req, res) => {
   const { refreshToken } = req.body
 
   if (!refreshToken) {
-    return sendError(res, 'Refresh token is required', 400)
+    return sendValidationError(res, { refreshToken: 'Refresh token is required' })
   }
 
-  const result = await authRefreshToken(refreshToken)
-  return sendSuccess(res, result, 'Token refreshed successfully')
-})
+  const userId = await authService.verifyRefreshToken(refreshToken)
+  if (!userId) {
+    return sendError(res, 'Invalid or expired refresh token', 401)
+  }
 
-export const resendVerification = asyncHandler(async (req, res) => {
-  const userId = req.user.id
+  await authService.revokeRefreshToken(refreshToken)
+  const tokens = await authService.generateTokens(userId)
 
-  const emailVerificationToken = await authResendVerification(userId)
-  return sendSuccess(res, { emailVerificationToken }, 'Verification email sent')
+  sendSuccess(res, tokens, 'Token refreshed successfully')
 })
 
 export const getMe = asyncHandler(async (req, res) => {
-  return sendSuccess(res, req.user, 'User data retrieved')
+  const user = await authService.findUserById(req.user.id)
+  sendSuccess(res, { user }, 'User retrieved successfully')
 })
 
 export default {
   signUp,
   signIn,
   signInWithGoogle,
-  verifyEmail,
   refreshToken,
-  resendVerification,
   getMe
 }
