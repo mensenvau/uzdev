@@ -1,18 +1,18 @@
-import express from 'express'
-import { authMiddleware } from '../../middlewares/auth.middleware.js'
-import { policyMiddleware } from '../../middlewares/policy.middleware.js'
-import { validate } from '../../middlewares/validate.middleware.js'
-import { roleAssignSchema, roleCreateSchema, roleUpdateSchema } from '../../validators/role.validator.js'
-import * as roleController from './role.controller.js'
+import express from "express";
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { policyMiddleware } from "../../middlewares/policy.middleware.js";
+import { validateMiddleware } from "../../middlewares/validate.middleware.js";
+import { schemaRoleAssign, schemaRoleCreate, schemaRoleUpdate } from "./role.schema.js";
+import { roleAssign, roleCreate, roleDelete, roleGet, roleList, roleRemove, roleUpdate } from "./role.controller.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.get('/', authMiddleware, policyMiddleware('role.list'), roleController.list)
-router.get('/:id', authMiddleware, policyMiddleware('role.get'), roleController.get)
-router.post('/', authMiddleware, policyMiddleware('role.create'), validate(roleCreateSchema), roleController.create)
-router.put('/:id', authMiddleware, policyMiddleware('role.edit'), validate(roleUpdateSchema), roleController.update)
-router.delete('/:id', authMiddleware, policyMiddleware('role.delete'), roleController.deleteRole)
-router.post('/assign', authMiddleware, policyMiddleware('role.assign'), validate(roleAssignSchema), roleController.assign)
-router.post('/remove', authMiddleware, policyMiddleware('role.remove'), validate(roleAssignSchema), roleController.remove)
+router.get("/", authMiddleware, policyMiddleware("role.list"), roleList);
+router.get("/:id", authMiddleware, policyMiddleware("role.get"), roleGet);
+router.post("/", authMiddleware, policyMiddleware("role.create"), validateMiddleware(schemaRoleCreate), roleCreate);
+router.put("/:id", authMiddleware, policyMiddleware("role.edit"), validateMiddleware(schemaRoleUpdate), roleUpdate);
+router.delete("/:id", authMiddleware, policyMiddleware("role.delete"), roleDelete);
+router.post("/assign", authMiddleware, policyMiddleware("role.assign"), validateMiddleware(schemaRoleAssign), roleAssign);
+router.post("/remove", authMiddleware, policyMiddleware("role.remove"), validateMiddleware(schemaRoleAssign), roleRemove);
 
-export default router
+export default router;

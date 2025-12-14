@@ -1,16 +1,16 @@
-import express from 'express'
-import { authMiddleware } from '../../middlewares/auth.middleware.js'
-import { policyMiddleware } from '../../middlewares/policy.middleware.js'
-import { validate } from '../../middlewares/validate.middleware.js'
-import { userCreateSchema, userUpdateSchema } from '../../validators/user.validator.js'
-import * as userController from './user.controller.js'
+import express from "express";
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { policyMiddleware } from "../../middlewares/policy.middleware.js";
+import { validateMiddleware } from "../../middlewares/validate.middleware.js";
+import { schemaUserCreate, schemaUserUpdate } from "./user.schema.js";
+import { userCreate, userDelete, userGet, userList, userUpdate } from "./user.controller.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.get('/', authMiddleware, policyMiddleware('user.list'), userController.list)
-router.get('/:id', authMiddleware, policyMiddleware('user.get'), userController.get)
-router.post('/', authMiddleware, policyMiddleware('user.create'), validate(userCreateSchema), userController.create)
-router.put('/:id', authMiddleware, policyMiddleware('user.edit'), validate(userUpdateSchema), userController.update)
-router.delete('/:id', authMiddleware, policyMiddleware('user.delete'), userController.deleteUser)
+router.get("/", authMiddleware, policyMiddleware("user.list"), userList);
+router.get("/:id", authMiddleware, policyMiddleware("user.get"), userGet);
+router.post("/", authMiddleware, policyMiddleware("user.create"), validateMiddleware(schemaUserCreate), userCreate);
+router.put("/:id", authMiddleware, policyMiddleware("user.edit"), validateMiddleware(schemaUserUpdate), userUpdate);
+router.delete("/:id", authMiddleware, policyMiddleware("user.delete"), userDelete);
 
-export default router
+export default router;

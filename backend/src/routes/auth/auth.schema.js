@@ -1,0 +1,43 @@
+import { z } from "zod";
+
+export const schemaAuthSignUp = z.object({
+  email: z.string().email("Invalid email format"),
+  first_name: z.string().min(1, "First name is required"),
+  last_name: z.string().min(1, "Last name is required"),
+  phone: z.string().min(3, "Phone is required"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain uppercase")
+    .regex(/[a-z]/, "Password must contain lowercase")
+    .regex(/[0-9]/, "Password must contain number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain special character"),
+});
+
+export const schemaAuthSignIn = z.object({
+  email: z.string().email("Email is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export const schemaAuthGoogle = z.object({
+  id_token: z.string().min(1, "Google ID token is required"),
+});
+
+export const schemaAuthRefresh = z.object({
+  refresh_token: z.string().min(1, "Refresh token is required"),
+});
+
+export const schemaAuthForgot = z.object({
+  email: z.string().email("Invalid email format"),
+});
+
+export const schemaAuthReset = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain uppercase")
+    .regex(/[a-z]/, "Password must contain lowercase")
+    .regex(/[0-9]/, "Password must contain number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain special character"),
+});

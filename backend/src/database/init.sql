@@ -2,27 +2,21 @@ DROP DATABASE IF EXISTS core_app;
 CREATE DATABASE core_app;
 USE core_app;
 
-CREATE TABLE users (
+CREATE TABLE system_users (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   email VARCHAR(255) UNIQUE,
   username VARCHAR(100) UNIQUE,
+  first_name VARCHAR(100),
+  last_name VARCHAR(100),
+  phone VARCHAR(50),
   password VARCHAR(255),
   google_id VARCHAR(255) UNIQUE NULL,
+  default_role_id BIGINT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE password_reset_tokens (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  user_id BIGINT,
-  token VARCHAR(255) UNIQUE,
-  expires_at TIMESTAMP,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE roles (
+CREATE TABLE system_roles (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(50) UNIQUE,
   description TEXT,
@@ -30,7 +24,7 @@ CREATE TABLE roles (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE policies (
+CREATE TABLE system_policies (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(100) UNIQUE,
   description TEXT,
@@ -38,29 +32,29 @@ CREATE TABLE policies (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE role_policies (
+CREATE TABLE system_role_policies (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   role_id BIGINT,
   policy_id BIGINT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY unique_role_policy (role_id, policy_id),
-  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
-  FOREIGN KEY (policy_id) REFERENCES policies(id) ON DELETE CASCADE
+  FOREIGN KEY (role_id) REFERENCES system_roles(id) ON DELETE CASCADE,
+  FOREIGN KEY (policy_id) REFERENCES system_policies(id) ON DELETE CASCADE
 );
 
-CREATE TABLE user_roles (
+CREATE TABLE system_user_roles (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT,
   role_id BIGINT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY unique_user_role (user_id, role_id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES system_users(id) ON DELETE CASCADE,
+  FOREIGN KEY (role_id) REFERENCES system_roles(id) ON DELETE CASCADE
 );
 
-CREATE TABLE groups (
+CREATE TABLE system_groups (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(100),
   description TEXT,
@@ -68,18 +62,37 @@ CREATE TABLE groups (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE group_users (
+CREATE TABLE system_departments (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100),
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE system_group_users (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   group_id BIGINT,
   user_id BIGINT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY unique_group_user (group_id, user_id),
-  FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (group_id) REFERENCES system_groups(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES system_users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE forms (
+CREATE TABLE system_user_departments (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT,
+  department_id BIGINT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_user_department (user_id, department_id),
+  FOREIGN KEY (department_id) REFERENCES system_departments(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES system_users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE system_forms (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(255),
   description TEXT,
@@ -87,10 +100,10 @@ CREATE TABLE forms (
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+  FOREIGN KEY (created_by) REFERENCES system_users(id) ON DELETE SET NULL
 );
 
-CREATE TABLE form_access (
+CREATE TABLE system_form_access (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   form_id BIGINT,
   access_type ENUM('role', 'group', 'link') NOT NULL,
@@ -98,10 +111,10 @@ CREATE TABLE form_access (
   expires_at TIMESTAMP NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+  FOREIGN KEY (form_id) REFERENCES system_forms(id) ON DELETE CASCADE
 );
 
-CREATE TABLE form_fields (
+CREATE TABLE system_form_fields (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   form_id BIGINT,
   field_key VARCHAR(100),
@@ -112,10 +125,10 @@ CREATE TABLE form_fields (
   field_order INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE
+  FOREIGN KEY (form_id) REFERENCES system_forms(id) ON DELETE CASCADE
 );
 
-CREATE TABLE field_options (
+CREATE TABLE system_form_field_options (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   field_id BIGINT,
   value VARCHAR(255),
@@ -124,10 +137,10 @@ CREATE TABLE field_options (
   option_order INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (field_id) REFERENCES form_fields(id) ON DELETE CASCADE
+  FOREIGN KEY (field_id) REFERENCES system_form_fields(id) ON DELETE CASCADE
 );
 
-CREATE TABLE field_table_sources (
+CREATE TABLE system_form_field_table_sources (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   field_id BIGINT,
   source_table VARCHAR(100),
@@ -135,10 +148,10 @@ CREATE TABLE field_table_sources (
   source_label_column VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (field_id) REFERENCES form_fields(id) ON DELETE CASCADE
+  FOREIGN KEY (field_id) REFERENCES system_form_fields(id) ON DELETE CASCADE
 );
 
-CREATE TABLE form_responses (
+CREATE TABLE system_form_responses (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   form_id BIGINT,
   user_id BIGINT NULL,
@@ -146,11 +159,11 @@ CREATE TABLE form_responses (
   status ENUM('draft', 'submitted', 'reviewed') DEFAULT 'draft',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (form_id) REFERENCES forms(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+  FOREIGN KEY (form_id) REFERENCES system_forms(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES system_users(id) ON DELETE SET NULL
 );
 
-CREATE TABLE form_response_values (
+CREATE TABLE system_form_response_values (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   response_id BIGINT,
   field_id BIGINT,
@@ -158,30 +171,14 @@ CREATE TABLE form_response_values (
   score INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (response_id) REFERENCES form_responses(id) ON DELETE CASCADE,
-  FOREIGN KEY (field_id) REFERENCES form_fields(id) ON DELETE CASCADE
+  FOREIGN KEY (response_id) REFERENCES system_form_responses(id) ON DELETE CASCADE,
+  FOREIGN KEY (field_id) REFERENCES system_form_fields(id) ON DELETE CASCADE
 );
 
-CREATE TABLE audit_logs (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  user_id BIGINT NULL,
-  action VARCHAR(100),
-  table_name VARCHAR(100),
-  record_id BIGINT,
-  old_value JSON,
-  new_value JSON,
-  ip_address VARCHAR(45),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_google_id ON users(google_id);
-CREATE INDEX idx_form_access_form_id ON form_access(form_id);
-CREATE INDEX idx_form_fields_form_id ON form_fields(form_id);
-CREATE INDEX idx_form_responses_form_id ON form_responses(form_id);
-CREATE INDEX idx_form_responses_user_id ON form_responses(user_id);
-CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX idx_audit_logs_table_name ON audit_logs(table_name);
+CREATE INDEX idx_system_users_email ON system_users(email);
+CREATE INDEX idx_system_users_username ON system_users(username);
+CREATE INDEX idx_system_users_google_id ON system_users(google_id);
+CREATE INDEX idx_system_form_access_form_id ON system_form_access(form_id);
+CREATE INDEX idx_system_form_fields_form_id ON system_form_fields(form_id);
+CREATE INDEX idx_system_form_responses_form_id ON system_form_responses(form_id);
+CREATE INDEX idx_system_form_responses_user_id ON system_form_responses(user_id);

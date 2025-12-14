@@ -1,12 +1,12 @@
 USE core_app;
 
-INSERT INTO roles (name, description) VALUES
+INSERT INTO system_roles (name, description) VALUES
 ('super', 'Full system access'),
 ('admin', 'Administrative access'),
 ('user', 'Standard user access'),
 ('guest', 'Limited guest access');
 
-INSERT INTO policies (name, description) VALUES
+INSERT INTO system_policies (name, description) VALUES
 ('me.delete', 'Delete own account'),
 ('me.edit', 'Edit own profile'),
 ('me.get', 'Get own profile'),
@@ -21,12 +21,21 @@ INSERT INTO policies (name, description) VALUES
 ('form.submit', 'Submit form responses'),
 ('form.view_responses', 'View form responses'),
 
-('group.assign', 'Assign users to groups'),
+('group.assign', 'Add user to group'),
 ('group.create', 'Create groups'),
 ('group.delete', 'Delete groups'),
 ('group.edit', 'Edit groups'),
 ('group.get', 'Get group details'),
 ('group.list', 'List groups'),
+('group.remove', 'Remove user from group'),
+
+('department.assign', 'Assign user to department'),
+('department.create', 'Create departments'),
+('department.delete', 'Delete departments'),
+('department.edit', 'Edit departments'),
+('department.get', 'Get department details'),
+('department.list', 'List departments'),
+('department.remove', 'Remove user from department'),
 
 ('policy.assign', 'Assign policies to roles'),
 ('policy.create', 'Create policies'),
@@ -41,6 +50,7 @@ INSERT INTO policies (name, description) VALUES
 ('role.edit', 'Edit roles'),
 ('role.get', 'Get role details'),
 ('role.list', 'List roles'),
+('role.remove', 'Remove role from user'),
 
 ('user.create', 'Create users'),
 ('user.delete', 'Delete users'),
@@ -48,28 +58,33 @@ INSERT INTO policies (name, description) VALUES
 ('user.get', 'Get user details'),
 ('user.list', 'List users');
 
-INSERT INTO role_policies (role_id, policy_id)
-SELECT (SELECT id FROM roles WHERE name = 'super'), id FROM policies;
+INSERT INTO system_role_policies (role_id, policy_id)
+SELECT (SELECT id FROM system_roles WHERE name = 'super'), id FROM system_policies;
 
-INSERT INTO role_policies (role_id, policy_id)
-SELECT (SELECT id FROM roles WHERE name = 'admin'), id FROM policies
+INSERT INTO system_role_policies (role_id, policy_id)
+SELECT (SELECT id FROM system_roles WHERE name = 'admin'), id FROM system_policies
 WHERE name NOT IN ('policy.delete', 'role.delete', 'user.delete');
 
-INSERT INTO role_policies (role_id, policy_id)
-SELECT (SELECT id FROM roles WHERE name = 'user'), id FROM policies
+INSERT INTO system_role_policies (role_id, policy_id)
+SELECT (SELECT id FROM system_roles WHERE name = 'user'), id FROM system_policies
 WHERE name IN ('form.get', 'form.list', 'form.submit', 'me.edit', 'me.get');
 
-INSERT INTO role_policies (role_id, policy_id)
-SELECT (SELECT id FROM roles WHERE name = 'guest'), id FROM policies
+INSERT INTO system_role_policies (role_id, policy_id)
+SELECT (SELECT id FROM system_roles WHERE name = 'guest'), id FROM system_policies
 WHERE name IN ('me.get');
 
-INSERT INTO users (email, username, password) VALUES
-('admin@app.com', 'admin', '$2b$10$rGHvEW5qZ4vQN5xK5xK5xK5xK5xK5xK5xK5xK5xK5xK5xK5xK5xK5');
+INSERT INTO system_users (email, username, first_name, last_name, phone, password) VALUES
+('balkibumen@gmail.com', 'admin', 'UK', '', '+998900000001', '$2b$10$4iyU9aFt89.x62YkoRG9oe7kFnysJR1DVKUWXpaIs570xzAFgGCfm');
 
-INSERT INTO user_roles (user_id, role_id) VALUES
-((SELECT id FROM users WHERE username = 'admin'), (SELECT id FROM roles WHERE name = 'super'));
+INSERT INTO system_user_roles (user_id, role_id) VALUES
+((SELECT id FROM system_users WHERE username = 'admin'), (SELECT id FROM system_roles WHERE name = 'super'));
 
-INSERT INTO groups (name, description) VALUES
+INSERT INTO system_groups (name, description) VALUES
 ('Development', 'Development team'),
 ('HR', 'Human resources'),
 ('Marketing', 'Marketing team');
+
+INSERT INTO system_departments (name, description) VALUES
+('Engineering', 'Product and engineering'),
+('People', 'Human resources and talent'),
+('Sales', 'Sales and growth');

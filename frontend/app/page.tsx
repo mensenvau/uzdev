@@ -1,27 +1,21 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
       <div className="max-w-4xl w-full space-y-8">
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
-            Welcome to Core App
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            A modern, full-stack application with authentication, form management, and more.
-          </p>
+          <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">Welcome to Core App</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">A modern, full-stack application with authentication, form management, and more.</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Get Started</CardTitle>
-              <CardDescription>
-                Create an account or sign in to access your dashboard
-              </CardDescription>
+              <CardDescription>Create an account or sign in to access your dashboard</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <Link href="/auth/login" className="block">
@@ -40,9 +34,7 @@ export default function Home() {
           <Card>
             <CardHeader>
               <CardTitle>Features</CardTitle>
-              <CardDescription>
-                Explore what our platform has to offer
-              </CardDescription>
+              <CardDescription>Explore what our platform has to offer</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex items-center space-x-2">
@@ -66,5 +58,5 @@ export default function Home() {
         </div>
       </div>
     </main>
-  )
+  );
 }

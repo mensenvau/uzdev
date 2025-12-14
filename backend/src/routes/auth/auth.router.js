@@ -1,16 +1,18 @@
-import express from 'express'
-import { authMiddleware } from '../../middlewares/auth.middleware.js'
-import { policyMiddleware } from '../../middlewares/policy.middleware.js'
-import { validate } from '../../middlewares/validate.middleware.js'
-import { authGoogleSchema, authRefreshSchema, authSignInSchema, authSignUpSchema } from '../../validators/auth.validator.js'
-import * as authController from './auth.controller.js'
+import express from "express";
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { policyMiddleware } from "../../middlewares/policy.middleware.js";
+import { validateMiddleware } from "../../middlewares/validate.middleware.js";
+import { schemaAuthGoogle, schemaAuthRefresh, schemaAuthSignIn, schemaAuthSignUp, schemaAuthForgot, schemaAuthReset } from "./auth.schema.js";
+import { authForgot, authGetMe, authRefreshToken, authResetPassword, authSignIn, authSignInWithGoogle, authSignUp } from "./auth.controller.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.post('/signup', validate(authSignUpSchema), authController.signUp)
-router.post('/signin', validate(authSignInSchema), authController.signIn)
-router.post('/google', validate(authGoogleSchema), authController.signInWithGoogle)
-router.post('/refresh-token', validate(authRefreshSchema), authController.refreshToken)
-router.get('/me', authMiddleware, policyMiddleware('me.get'), authController.getMe)
+router.post("/signup", validateMiddleware(schemaAuthSignUp), authSignUp);
+router.post("/signin", validateMiddleware(schemaAuthSignIn), authSignIn);
+router.post("/google", validateMiddleware(schemaAuthGoogle), authSignInWithGoogle);
+router.post("/refresh-token", validateMiddleware(schemaAuthRefresh), authRefreshToken);
+router.post("/forgot-password", validateMiddleware(schemaAuthForgot), authForgot);
+router.post("/reset-password", validateMiddleware(schemaAuthReset), authResetPassword);
+router.get("/me", authMiddleware, policyMiddleware("me.get"), authGetMe);
 
-export default router
+export default router;

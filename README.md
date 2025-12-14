@@ -16,18 +16,21 @@ Production-ready application boilerplate with advanced authentication, role-base
 ## 🏗️ Tech Stack
 
 **Backend:**
+
 - Node.js + Express
 - MySQL 8.0
 - JWT authentication
 - Bcrypt password hashing
 
 **Frontend:**
+
 - Next.js 14 (App Router)
 - shadcn/ui components
 - Tailwind CSS
 - TypeScript
 
 **DevOps:**
+
 - Docker & Docker Compose
 - MySQL container
 
@@ -73,6 +76,7 @@ docker-compose logs -f
 ```
 
 Access:
+
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:3001
 - Health Check: http://localhost:3001/health
@@ -114,69 +118,10 @@ After running database seeds:
 - **Username:** superadmin
 - **Password:** Admin@123
 
-## 📖 API Endpoints
-
-### Authentication
-```
-POST   /api/auth/signup
-POST   /api/auth/signin
-POST   /api/auth/google
-POST   /api/auth/verify-email
-POST   /api/auth/refresh-token
-POST   /api/auth/resend-verification
-GET    /api/auth/me
-```
-
-### Users
-```
-GET    /api/users
-GET    /api/users/:id
-POST   /api/users
-PUT    /api/users/:id
-DELETE /api/users/:id
-```
-
-### Roles
-```
-GET    /api/roles
-POST   /api/roles
-PUT    /api/roles/:id
-DELETE /api/roles/:id
-POST   /api/roles/assign
-```
-
-### Policies
-```
-GET    /api/policies
-POST   /api/policies
-PUT    /api/policies/:id
-DELETE /api/policies/:id
-POST   /api/policies/assign
-```
-
-### Groups
-```
-GET    /api/groups
-POST   /api/groups
-PUT    /api/groups/:id
-DELETE /api/groups/:id
-POST   /api/groups/add-user
-```
-
-### Forms
-```
-GET    /api/forms
-GET    /api/forms/:id
-POST   /api/forms
-PUT    /api/forms/:id
-DELETE /api/forms/:id
-POST   /api/forms/:id/responses
-GET    /api/forms/:id/responses
-```
-
 ## 🎯 Database Schema
 
 **Core Tables:**
+
 - `users` - User accounts
 - `roles` - User roles (super_admin, admin, user, guest)
 - `policies` - Permissions (40+ policies)
@@ -227,11 +172,13 @@ docker-compose down -v
 See `.env.example` for all available variables.
 
 **Required:**
+
 - `DB_PASSWORD` - MySQL root password
 - `JWT_SECRET` - JWT signing secret
 - `JWT_REFRESH_SECRET` - Refresh token secret
 
 **Optional:**
+
 - `PORT` - Backend port (default: 3001)
 - `FRONTEND_PORT` - Frontend port (default: 3000)
 - `DB_HOST` - Database host (default: localhost)
@@ -272,6 +219,7 @@ The advanced form system supports:
 ## 📚 Use Cases
 
 Perfect for:
+
 - SaaS applications
 - Survey/Form platforms
 - Exam/Quiz systems

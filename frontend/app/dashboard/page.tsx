@@ -1,140 +1,219 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getUser, logout, isAuthenticated } from "@/lib/auth"
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { isAuthenticated, logout, setUserInfo } from "@/lib/auth";
+import { useRolePreference } from "@/lib/use-role-preference";
+import { ArrowRight } from "lucide-react";
+import { toast } from "sonner";
+import Link from "next/link";
+import api from "@/lib/api";
+
+type RoleOption = { id: number; name: string };
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push("/auth/login")
-      return
+    const load = async () => {
+      if (!isAuthenticated()) {
+        toast.error("Session expired. Please sign in again.");
+        router.push("/auth/login");
+        return;
+      }
+
+      try {
+        const fresh = await api.get("/auth/me").then((res) => res.data.user || res.data);
+        const normalized = {
+          ...fresh,
+          roles: fresh.roles || [],
+          role: fresh.default_role?.name || fresh.role,
+          default_role_id: fresh.default_role?.id || fresh.default_role_id,
+        };
+        setUser(normalized);
+        setUserInfo(normalized);
+      } catch {
+        toast.error("Could not load your profile");
+        logout();
+        router.push("/auth/login");
+      }
+    };
+    load();
+  }, [router]);
+
+  const roleOptions: RoleOption[] = useMemo(() => {
+    if (!user?.roles) return [];
+    return (user.roles as any[])
+      .map((r) => ({
+        id: typeof r === "object" ? Number(r.id) : NaN,
+        name: typeof r === "object" ? r.name : String(r),
+      }))
+      .filter((r) => r.id && r.name);
+  }, [user?.roles]);
+
+  const { activeRole, setActiveRole } = useRolePreference(
+    user
+      ? {
+          id: user.id,
+          role: user.role,
+          roles: roleOptions.map((r) => r.name),
+        }
+      : null
+  );
+
+  const handleRoleChange = async (roleId: number) => {
+    if (!user?.id || !roleId) return;
+    const selected = roleOptions.find((r) => r.id === roleId);
+    if (!selected) return;
+    setActiveRole(selected.name);
+    try {
+      await api.put(`/users/${user.id}`, { default_role_id: roleId });
+      const updated = { ...user, role: selected.name, default_role_id: roleId };
+      setUser(updated);
+      setUserInfo(updated);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Could not set default role");
     }
-
-    const userData = getUser()
-    setUser(userData)
-  }, [router])
-
-  const handleLogout = () => {
-    logout()
-  }
+  };
 
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-muted-foreground">Loading your workspace...</p>
       </div>
-    )
+    );
   }
 
+  const groups = Array.isArray(user?.groups) ? user.groups : [];
+  const departments = Array.isArray(user?.departments) ? user.departments : [];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <nav className="border-b bg-white/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold">Core App</h1>
-          <div className="flex items-center gap-4">
+    <DashboardShell
+      user={user}
+      title="Your control center"
+      subtitle="Track forms, manage access, and stay on top of your workflows."
+      onLogout={logout}
+      actions={
+        roleOptions.length > 1 ? (
+          <select className="h-10 rounded-md border bg-white px-3 text-sm capitalize shadow-sm" value={roleOptions.find((r) => r.name === activeRole)?.id ?? ""} onChange={(e) => handleRoleChange(Number(e.target.value))}>
+            {roleOptions.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        ) : null
+      }
+    >
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="border bg-white/80 backdrop-blur">
+          <CardHeader>
+            <CardTitle>Profile overview</CardTitle>
+            <CardDescription>Key info at a glance</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border bg-gradient-to-br from-slate-50 to-white p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Email</p>
+              <p className="mt-1 text-sm font-medium">{user.email}</p>
+            </div>
+            <div className="rounded-2xl border bg-gradient-to-br from-slate-50 to-white p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Name</p>
+              <p className="mt-1 text-sm font-medium">{user.first_name || user.last_name ? `${user.first_name || ""} ${user.last_name || ""}`.trim() : "—"}</p>
+            </div>
+            <div className="rounded-2xl border bg-gradient-to-br from-slate-50 to-white p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Phone</p>
+              <p className="mt-1 text-sm font-medium">{user.phone || "—"}</p>
+            </div>
+            <div className="rounded-2xl border bg-gradient-to-br from-slate-50 to-white p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Role</p>
+              <p className="mt-1 text-sm font-medium capitalize">{activeRole || "user"}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border overflow-hidden bg-white/90 backdrop-blur shadow-sm">
+          <div className="bg-gradient-to-r from-indigo-600 via-sky-500 to-emerald-400 px-6 py-4 text-white">
+            <CardTitle className="text-white">Quick actions</CardTitle>
+            <CardDescription className="text-white/80">Jump right into what matters.</CardDescription>
+          </div>
+          <CardContent className="space-y-3 p-6">
             <Link href="/forms">
-              <Button variant="ghost">Forms</Button>
+              <Button variant="ghost" className="w-full justify-between border border-indigo-100 text-indigo-700 hover:bg-indigo-50">
+                <span>Forms</span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             </Link>
-            <Button variant="outline" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
-        </div>
-      </nav>
+          </CardContent>
+        </Card>
+      </div>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">
-              Welcome back, {user.firstName}!
-            </h2>
-            <p className="text-muted-foreground mt-2">
-              Manage your account and access your forms
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Profile</CardTitle>
-                <CardDescription>Your account information</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div>
-                  <p className="text-sm text-muted-foreground">Name</p>
-                  <p className="font-medium">{user.firstName} {user.lastName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{user.email}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>What would you like to do?</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Link href="/forms" className="block">
-                  <Button className="w-full" variant="default">
-                    View All Forms
-                  </Button>
-                </Link>
-                <Button className="w-full" variant="outline" disabled>
-                  Settings (Coming Soon)
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Getting Started</CardTitle>
-              <CardDescription>Explore the platform features</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-semibold">1</span>
-                  </div>
-                  <h4 className="font-medium">Browse Forms</h4>
-                  <p className="text-sm text-muted-foreground">
-                    View all available forms in the forms section
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-semibold">2</span>
-                  </div>
-                  <h4 className="font-medium">Submit Data</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Fill out and submit forms with your information
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-semibold">3</span>
-                  </div>
-                  <h4 className="font-medium">Track Progress</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Monitor your submissions and activity
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    </div>
-  )
+      <div className="grid gap-6">
+        <Card className="border bg-white/80 backdrop-blur">
+          <CardHeader>
+            <CardTitle>User details</CardTitle>
+            <CardDescription>Access and memberships</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <table className="w-full text-sm border rounded-lg overflow-hidden">
+              <tbody>
+                <tr className="border-b">
+                  <td className="px-3 py-3 font-semibold text-muted-foreground w-32">Roles</td>
+                  <td className="px-3 py-3">
+                    {roleOptions.length === 0 ? (
+                      <span className="text-muted-foreground">No roles assigned</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {roleOptions.map((r) => (
+                          <span key={r.id} className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-sm text-indigo-800">
+                            {r.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">Default: {activeRole || "user"}</p>
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="px-3 py-3 font-semibold text-muted-foreground">Groups</td>
+                  <td className="px-3 py-3">
+                    {groups.length === 0 ? (
+                      <span className="text-muted-foreground">No groups</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {groups.map((g: any) => (
+                          <span key={g.id} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm">
+                            {g.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-3 py-3 font-semibold text-muted-foreground">Departments</td>
+                  <td className="px-3 py-3">
+                    {departments.length === 0 ? (
+                      <span className="text-muted-foreground">No departments</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {departments.map((d: any) => (
+                          <span key={d.id} className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-sm text-emerald-800">
+                            {d.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardShell>
+  );
 }

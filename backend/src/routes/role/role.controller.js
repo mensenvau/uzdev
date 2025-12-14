@@ -1,46 +1,46 @@
-import { asyncHandler } from '../../utils/async.util.js'
-import { sendSuccess } from '../../utils/response.util.js'
-import * as roleService from './role.service.js'
+import { asyncHandler } from "../../utils/async.util.js";
+import { sendSuccess } from "../../utils/response.util.js";
+import { fnRoleAssign, fnRoleCreate, fnRoleDelete, fnRoleGet, fnRoleList, fnRoleRemove, fnRoleUpdate } from "./role.service.js";
 
-export const assign = asyncHandler(async (req, res) => {
-  const { roleId, userId } = req.body
-  await roleService.roleAssignToUser(userId, roleId)
-  sendSuccess(res, null, 'Role assigned successfully')
-})
+export const roleAssign = asyncHandler(async (req, res) => {
+  const { role_id, user_id } = req.body;
+  await fnRoleAssign(user_id, role_id);
+  sendSuccess(res, null, "Role assigned successfully");
+});
 
-export const create = asyncHandler(async (req, res) => {
-  const { description, name } = req.body
-  const role = await roleService.roleCreate(name, description)
-  sendSuccess(res, { role }, 'Role created successfully', 201)
-})
+export const roleCreate = asyncHandler(async (req, res) => {
+  const { description, name } = req.body;
+  const role = await fnRoleCreate(name, description);
+  sendSuccess(res, { role }, "Role created successfully", 201);
+});
 
-export const deleteRole = asyncHandler(async (req, res) => {
-  await roleService.roleDelete(req.params.id)
-  sendSuccess(res, null, 'Role deleted successfully')
-})
+export const roleDelete = asyncHandler(async (req, res) => {
+  await fnRoleDelete(req.params.id);
+  sendSuccess(res, null, "Role deleted successfully");
+});
 
-export const get = asyncHandler(async (req, res) => {
-  const role = await roleService.roleGet(req.params.id)
-  sendSuccess(res, { role })
-})
+export const roleGet = asyncHandler(async (req, res) => {
+  const role = await fnRoleGet(req.params.id);
+  sendSuccess(res, { role });
+});
 
-export const list = asyncHandler(async (req, res) => {
-  const { limit, page, search } = req.query
-  const result = await roleService.roleList({
+export const roleList = asyncHandler(async (req, res) => {
+  const { limit, page, search } = req.query;
+  const result = await fnRoleList({
     limit: parseInt(limit) || 10,
     page: parseInt(page) || 1,
-    search
-  })
-  sendSuccess(res, result)
-})
+    search,
+  });
+  sendSuccess(res, result);
+});
 
-export const remove = asyncHandler(async (req, res) => {
-  const { roleId, userId } = req.body
-  await roleService.roleRemoveFromUser(userId, roleId)
-  sendSuccess(res, null, 'Role removed successfully')
-})
+export const roleRemove = asyncHandler(async (req, res) => {
+  const { role_id, user_id } = req.body;
+  await fnRoleRemove(user_id, role_id);
+  sendSuccess(res, null, "Role removed successfully");
+});
 
-export const update = asyncHandler(async (req, res) => {
-  const role = await roleService.roleUpdate(req.params.id, req.body)
-  sendSuccess(res, { role }, 'Role updated successfully')
-})
+export const roleUpdate = asyncHandler(async (req, res) => {
+  const role = await fnRoleUpdate(req.params.id, req.body);
+  sendSuccess(res, { role }, "Role updated successfully");
+});

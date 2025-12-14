@@ -1,18 +1,19 @@
-import { sendValidationError } from '../utils/response.util.js'
+import { sendValidationError } from "../utils/response.util.js";
 
-export function validate(schema) {
+export function validateMiddleware(schema) {
   return async (req, res, next) => {
     try {
-      await schema.parseAsync(req.body)
-      next()
+      await schema.parseAsync(req.body);
+      return next();
     } catch (error) {
-      const errors = {}
-      error.errors.forEach(err => {
-        errors[err.path[0]] = err.message
-      })
-      return sendValidationError(res, errors)
+      const errors = {};
+      const issues = error.issues;
+      for (const issue of issues) {
+        errors[issue.path?.[0] || "unknown"] = issue.message;
+      }
+      return sendValidationError(res, errors);
     }
-  }
+  };
 }
 
-export default validate
+export default validateMiddleware;

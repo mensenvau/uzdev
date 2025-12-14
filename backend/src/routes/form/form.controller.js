@@ -1,46 +1,59 @@
-import { asyncHandler } from '../../utils/async.util.js'
-import { sendSuccess } from '../../utils/response.util.js'
-import * as formService from './form.service.js'
+import { asyncHandler } from "../../utils/async.util.js";
+import { sendSuccess } from "../../utils/response.util.js";
+import { fnFormAddAccess, fnFormCreate, fnFormDelete, fnFormGet, fnFormList, fnFormListTableColumns, fnFormListTables, fnFormSubmit, fnFormUpdate } from "./form.service.js";
 
-export const addAccess = asyncHandler(async (req, res) => {
-  const { accessType, accessValue, expiresAt } = req.body
-  const result = await formService.formAddAccess(req.params.id, accessType, accessValue, expiresAt)
-  sendSuccess(res, result, 'Access added successfully', 201)
-})
+export const formAddAccess = asyncHandler(async (req, res) => {
+  const { access_type, access_value, expires_at } = req.body;
+  const result = await fnFormAddAccess(req.params.id, access_type, access_value, expires_at);
+  sendSuccess(res, result, "Access added successfully", 201);
+});
 
-export const create = asyncHandler(async (req, res) => {
-  const { description, name } = req.body
-  const form = await formService.formCreate(name, description, req.user.id)
-  sendSuccess(res, { form }, 'Form created successfully', 201)
-})
+export const formCreate = asyncHandler(async (req, res) => {
+  const { description, name } = req.body;
+  const form = await fnFormCreate(name, description, req.user.id);
+  sendSuccess(res, { form }, "Form created successfully", 201);
+});
 
-export const deleteForm = asyncHandler(async (req, res) => {
-  await formService.formDelete(req.params.id)
-  sendSuccess(res, null, 'Form deleted successfully')
-})
+export const formDelete = asyncHandler(async (req, res) => {
+  await fnFormDelete(req.params.id);
+  sendSuccess(res, null, "Form deleted successfully");
+});
 
-export const get = asyncHandler(async (req, res) => {
-  const form = await formService.formGet(req.params.id)
-  sendSuccess(res, { form })
-})
+export const formGet = asyncHandler(async (req, res) => {
+  const form = await fnFormGet(req.params.id);
+  sendSuccess(res, { form });
+});
 
-export const list = asyncHandler(async (req, res) => {
-  const { limit, page, search } = req.query
-  const result = await formService.formList({
+export const formList = asyncHandler(async (req, res) => {
+  const { limit, page, search } = req.query;
+  const result = await fnFormList({
     limit: parseInt(limit) || 10,
     page: parseInt(page) || 1,
-    search
-  })
-  sendSuccess(res, result)
-})
+    search,
+  });
+  sendSuccess(res, result);
+});
 
-export const submit = asyncHandler(async (req, res) => {
-  const { answers, token } = req.body
-  const result = await formService.formSubmit(req.params.id, req.user?.id || null, answers, token)
-  sendSuccess(res, result, 'Form submitted successfully', 201)
-})
+export const formSubmit = asyncHandler(async (req, res) => {
+  const { answers, token } = req.body;
+  const result = await fnFormSubmit(req.params.id, req.user?.id || null, answers, token);
+  sendSuccess(res, result, "Form submitted successfully", 201);
+});
 
-export const update = asyncHandler(async (req, res) => {
-  const form = await formService.formUpdate(req.params.id, req.body)
-  sendSuccess(res, { form }, 'Form updated successfully')
-})
+export const formUpdate = asyncHandler(async (req, res) => {
+  const form = await fnFormUpdate(req.params.id, req.body);
+  sendSuccess(res, { form }, "Form updated successfully");
+});
+
+export const formTables = asyncHandler(async (req, res) => {
+  const { prefix } = req.query;
+  const tables = await fnFormListTables(prefix || "system_");
+  sendSuccess(res, { tables });
+});
+
+export const formTableColumns = asyncHandler(async (req, res) => {
+  const { name } = req.params;
+  const { prefix } = req.query;
+  const columns = await fnFormListTableColumns(name, prefix || "system_");
+  sendSuccess(res, { columns });
+});

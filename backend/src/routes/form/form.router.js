@@ -1,18 +1,20 @@
-import express from 'express'
-import { authMiddleware } from '../../middlewares/auth.middleware.js'
-import { policyMiddleware } from '../../middlewares/policy.middleware.js'
-import { validate } from '../../middlewares/validate.middleware.js'
-import { formAccessSchema, formCreateSchema, formSubmitSchema, formUpdateSchema } from '../../validators/form.validator.js'
-import * as formController from './form.controller.js'
+import express from "express";
+import { authMiddleware } from "../../middlewares/auth.middleware.js";
+import { policyMiddleware } from "../../middlewares/policy.middleware.js";
+import { validateMiddleware } from "../../middlewares/validate.middleware.js";
+import { schemaFormAccess, schemaFormCreate, schemaFormSubmit, schemaFormUpdate } from "./form.schema.js";
+import { formAddAccess, formCreate, formDelete, formGet, formList, formSubmit, formTables, formTableColumns, formUpdate } from "./form.controller.js";
 
-const router = express.Router()
+const router = express.Router();
 
-router.get('/', authMiddleware, policyMiddleware('form.list'), formController.list)
-router.get('/:id', authMiddleware, policyMiddleware('form.get'), formController.get)
-router.post('/', authMiddleware, policyMiddleware('form.create'), validate(formCreateSchema), formController.create)
-router.put('/:id', authMiddleware, policyMiddleware('form.edit'), validate(formUpdateSchema), formController.update)
-router.delete('/:id', authMiddleware, policyMiddleware('form.delete'), formController.deleteForm)
-router.post('/:id/access', authMiddleware, policyMiddleware('form.add_access'), validate(formAccessSchema), formController.addAccess)
-router.post('/:id/submit', validate(formSubmitSchema), formController.submit)
+router.get("/meta/tables", authMiddleware, policyMiddleware("form.list"), formTables);
+router.get("/meta/tables/:name/columns", authMiddleware, policyMiddleware("form.list"), formTableColumns);
+router.get("/", authMiddleware, policyMiddleware("form.list"), formList);
+router.get("/:id", authMiddleware, policyMiddleware("form.get"), formGet);
+router.post("/", authMiddleware, policyMiddleware("form.create"), validateMiddleware(schemaFormCreate), formCreate);
+router.put("/:id", authMiddleware, policyMiddleware("form.edit"), validateMiddleware(schemaFormUpdate), formUpdate);
+router.delete("/:id", authMiddleware, policyMiddleware("form.delete"), formDelete);
+router.post("/:id/access", authMiddleware, policyMiddleware("form.add_access"), validateMiddleware(schemaFormAccess), formAddAccess);
+router.post("/:id/submit", validateMiddleware(schemaFormSubmit), formSubmit);
 
-export default router
+export default router;
