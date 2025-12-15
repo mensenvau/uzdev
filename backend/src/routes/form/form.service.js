@@ -1,4 +1,4 @@
-import { prisma, withTransaction } from "../../utils/db.util.js";
+import { prisma } from "../../utils/db.util.js";
 
 const OPTION_FIELD_TYPES = ["select", "checkbox", "radio", "score"];
 const TABLE_FIELD_TYPE = "table_select";
@@ -185,7 +185,7 @@ export async function fnFormGet(id, client = prisma) {
 }
 
 export async function fnFormCreate(name, description, created_by, fields = []) {
-  return withTransaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     const created = await tx.form.create({
       data: { name, description, created_by },
     });
@@ -197,7 +197,7 @@ export async function fnFormCreate(name, description, created_by, fields = []) {
 }
 
 export async function fnFormUpdate(id, { name, description, is_active, fields }) {
-  return withTransaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     const existing = await tx.form.findUnique({ where: { id: Number(id) } });
     if (!existing) throw new Error("Form not found");
 
@@ -265,7 +265,7 @@ export async function fnFormSubmit(form_id, user_id, answers) {
     }
   }
 
-  return withTransaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     const response = await tx.formResponse.create({
       data: {
         form_id: Number(form_id),

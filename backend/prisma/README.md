@@ -140,9 +140,9 @@ const employees = await prisma.hrEmployee.findMany(); // hr_employees
 ### Using Transactions
 
 ```javascript
-import { withTransaction } from "../../utils/db.util.js";
+import { prisma } from "../../utils/db.util.js";
 
-await withTransaction(async (tx) => {
+await prisma.$transaction(async (tx) => {
   const user = await tx.user.create({ data: { ... } });
   await tx.userRole.create({ data: { user_id: user.id, ... } });
 });
