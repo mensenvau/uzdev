@@ -19,7 +19,12 @@ async function upsertPolicy(name, description) {
   });
 }
 
+/**
+ * System Module Seed
+ * Seeds core authentication and authorization data (system_* tables)
+ */
 export default async function systemSeed() {
+  console.log("🌱 Seeding System module...");
   const roles = {
     super: await upsertRole("super", "Full system access"),
     admin: await upsertRole("admin", "Administrative access"),
@@ -131,5 +136,5 @@ export default async function systemSeed() {
     skipDuplicates: true,
   });
 
-  console.log("System seed completed.");
+  console.log("✅ System module seed completed.");
 }

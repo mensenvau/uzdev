@@ -1,0 +1,16 @@
+// DSS Module Schema
+// All tables in this module use the 'dss_' prefix
+
+// Example model for DSS module
+// Uncomment and modify as needed:
+
+/*
+model DssExample {
+  id         Int      @id @default(autoincrement())
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("dss_examples")
+}
+*/

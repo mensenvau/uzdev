@@ -1,10 +1,30 @@
-/// <reference path="./models/system.prisma" />
+// Prisma Schema - Modular Structure
+// This main schema file references all module schemas
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+// Module Schemas
+// Add new modules here by creating a new schema file in ./schemas/
+// and adding a reference below
+
+/// System Module - Core authentication and authorization
+/// Tables: system_*
+/// <reference path="./schemas/system.prisma" />
+
+/// DSS Module - Decision Support System (example module)
+/// Tables: dss_*
+/// <reference path="./schemas/dss.prisma" />
+
+// To add a new module:
+// 1. Create a new file in ./schemas/ (e.g., hr.prisma)
+// 2. Add a reference here: /// <reference path="./schemas/hr.prisma" />
+// 3. Create corresponding seed file in ./seeds/ (e.g., hr.seed.js)
+// 4. Import and call seed in ./seeds/index.js
