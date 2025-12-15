@@ -8,7 +8,6 @@ import formRouter from "./routes/form/form.router.js";
 import groupRouter from "./routes/group/group.router.js";
 import policyRouter from "./routes/policy/policy.router.js";
 import roleRouter from "./routes/role/role.router.js";
-import departmentRouter from "./routes/department/department.router.js";
 import userRouter from "./routes/user/user.router.js";
 
 const app = express();
@@ -28,7 +27,6 @@ app.use("/api/forms", formRouter);
 app.use("/api/groups", groupRouter);
 app.use("/api/policies", policyRouter);
 app.use("/api/roles", roleRouter);
-app.use("/api/departments", departmentRouter);
 app.use("/api/users", userRouter);
 
 app.use((err, req, res, next) => {

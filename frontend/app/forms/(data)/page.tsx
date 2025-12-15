@@ -11,7 +11,7 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 
-type FormRow = { id: number; name: string; description?: string };
+type FormRow = { id: number; name: string; description?: string; field_count?: number; is_active?: boolean };
 
 export default function FormsDataPage() {
   const router = useRouter();
@@ -93,14 +93,16 @@ export default function FormsDataPage() {
                 <tr className="text-left text-muted-foreground">
                   <th className="px-3 py-2">Name</th>
                   <th className="px-3 py-2">Description</th>
-                  <th className="px-3 py-2 w-32">Actions</th>
+                  <th className="px-3 py-2">Fields</th>
+                  <th className="px-3 py-2 w-40">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {forms.map((f) => (
                   <tr key={f.id} className="border-t">
                     <td className="px-3 py-2 font-medium">{f.name}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{f.description || "—"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{f.description || "-"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{f.field_count ?? "-"}</td>
                     <td className="px-3 py-2">
                       <div className="flex gap-2 justify-end">
                         <Button size="sm" variant="outline" className="px-2" onClick={() => router.push(`/forms/manage?id=${f.id}`)}>
@@ -115,14 +117,14 @@ export default function FormsDataPage() {
                 ))}
                 {forms.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">
+                    <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
                       No forms found.
                     </td>
                   </tr>
                 )}
                 {loading && (
                   <tr>
-                    <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">
+                    <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
                       Loading...
                     </td>
                   </tr>

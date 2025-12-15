@@ -1,6 +1,17 @@
 import { asyncHandler } from "../../utils/async.util.js";
 import { sendSuccess } from "../../utils/response.util.js";
-import { fnFormAddAccess, fnFormCreate, fnFormDelete, fnFormGet, fnFormList, fnFormListTableColumns, fnFormListTables, fnFormSubmit, fnFormUpdate } from "./form.service.js";
+import {
+  fnFormAddAccess,
+  fnFormCreate,
+  fnFormDelete,
+  fnFormGet,
+  fnFormList,
+  fnFormListTableColumns,
+  fnFormListTables,
+  fnFormResponses,
+  fnFormSubmit,
+  fnFormUpdate,
+} from "./form.service.js";
 
 export const formAddAccess = asyncHandler(async (req, res) => {
   const { access_type, access_value, expires_at } = req.body;
@@ -9,8 +20,8 @@ export const formAddAccess = asyncHandler(async (req, res) => {
 });
 
 export const formCreate = asyncHandler(async (req, res) => {
-  const { description, name } = req.body;
-  const form = await fnFormCreate(name, description, req.user.id);
+  const { description, name, fields } = req.body;
+  const form = await fnFormCreate(name, description, req.user.id, fields);
   sendSuccess(res, { form }, "Form created successfully", 201);
 });
 
@@ -35,14 +46,19 @@ export const formList = asyncHandler(async (req, res) => {
 });
 
 export const formSubmit = asyncHandler(async (req, res) => {
-  const { answers, token } = req.body;
-  const result = await fnFormSubmit(req.params.id, req.user?.id || null, answers, token);
+  const { answers } = req.body;
+  const result = await fnFormSubmit(req.params.id, req.user?.id || null, answers);
   sendSuccess(res, result, "Form submitted successfully", 201);
 });
 
 export const formUpdate = asyncHandler(async (req, res) => {
   const form = await fnFormUpdate(req.params.id, req.body);
   sendSuccess(res, { form }, "Form updated successfully");
+});
+
+export const formResponses = asyncHandler(async (req, res) => {
+  const responses = await fnFormResponses(req.params.id);
+  sendSuccess(res, { responses });
 });
 
 export const formTables = asyncHandler(async (req, res) => {

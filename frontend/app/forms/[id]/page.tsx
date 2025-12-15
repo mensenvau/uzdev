@@ -32,7 +32,7 @@ export default function FormDetailPage() {
           <div>
             <Link href="/forms">
               <Button variant="ghost" className="mb-4">
-                ← Back to Forms
+                ← Back to forms
               </Button>
             </Link>
           </div>

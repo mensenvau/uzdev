@@ -7,7 +7,11 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "db:reset": "node src/database/reset.js"
+    "prisma:generate": "npx prisma generate",
+    "prisma:studio": "npx prisma studio",
+    "prisma:migrate": "npx prisma migrate deploy",
+    "prisma:migrate:dev": "npx prisma migrate dev",
+    "prisma:seed": "npx prisma db seed"
   },
   "keywords": [
     "express",
@@ -19,6 +23,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@prisma/client": "7.1",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "cross-env": "^7.0.3",
@@ -26,11 +31,19 @@
     "express": "^4.18.2",
     "google-auth-library": "^10.5.0",
     "helmet": "^7.1.0",
+    "i": "^0.3.7",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "mysql2": "^3.6.5",
     "nodemailer": "^7.0.11",
     "nodemon": "^3.1.11",
+    "npm": "^11.7.0",
     "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "prisma": "7.1"
+  },
+  "prisma": {
+    "seed": "node prisma/seed/index.js"
   }
 }

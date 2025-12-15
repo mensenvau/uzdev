@@ -1,6 +1,6 @@
 import { jwtVerifyAccess } from "../utils/jwt.util.js";
 import { sendUnauthorized } from "../utils/response.util.js";
-import { queryMany } from "../utils/db.util.js";
+import { prisma } from "../utils/db.util.js";
 
 export async function authMiddleware(req, res, next) {
   try {
@@ -15,12 +15,16 @@ export async function authMiddleware(req, res, next) {
       return sendUnauthorized(res, "Invalid or expired token");
     }
 
-    const user_rows = await queryMany("SELECT id, email, username, first_name, last_name, phone FROM system_users WHERE id = ?", [decoded.user_id]);
-    if (user_rows.length === 0) {
+    const user = await prisma.user.findUnique({
+      where: { id: Number(decoded.user_id) },
+      select: { id: true, email: true, username: true, first_name: true, last_name: true, phone: true },
+    });
+
+    if (!user) {
       return sendUnauthorized(res, "User not found");
     }
 
-    req.user = user_rows[0];
+    req.user = user;
     next();
   } catch (error) {
     console.log(error);
@@ -39,10 +43,11 @@ export async function optionalAuthMiddleware(req, res, next) {
     const decoded = jwtVerifyAccess(token);
 
     if (decoded) {
-      const user_rows = await queryMany("SELECT id, email, username, first_name, last_name, phone, is_email_verified FROM system_users WHERE id = ?", [decoded.user_id]);
-      if (user_rows.length > 0) {
-        req.user = user_rows[0];
-      }
+      const user = await prisma.user.findUnique({
+        where: { id: Number(decoded.user_id) },
+        select: { id: true, email: true, username: true, first_name: true, last_name: true, phone: true },
+      });
+      if (user) req.user = user;
     }
     next();
   } catch (error) {

@@ -12,8 +12,6 @@ services:
       - "${DB_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./backend/src/database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
-      - ./backend/src/database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
@@ -31,15 +29,22 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: ${PORT:-3001}
       HOST: ${HOST:-0.0.0.0}
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_USER: ${DB_USER:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-rootpassword}
-      DB_NAME: ${DB_NAME:-core_app}
-      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-in-production}
+      DATABASE_URL: mysql://${DB_USER:-root}:${DB_PASSWORD:-rootpassword}@mysql:3306/${DB_NAME:-core_app}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-access-secret-key}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-refresh-secret-key}
+      JWT_PASSWORD_RESET_SECRET: ${JWT_PASSWORD_RESET_SECRET:-password-reset-secret-key}
+      JWT_FORM_ACCESS_SECRET: ${JWT_FORM_ACCESS_SECRET:-form-access-secret-key}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@example.com}
     ports:
       - "${PORT:-3001}:3001"
+    command: ["/bin/sh", "-c", "npm run prisma:migrate && npm run prisma:seed && node src/server.js"]
     depends_on:
       mysql:
         condition: service_healthy

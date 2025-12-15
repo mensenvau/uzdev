@@ -1,16 +1,23 @@
 import { sendForbidden } from "../utils/response.util.js";
-import { queryMany } from "../utils/db.util.js";
+import { prisma } from "../utils/db.util.js";
 
 export async function userHasPolicy(user_id, policy_name) {
-  const result = await queryMany(
-    `SELECT COUNT(*) as count
-     FROM system_user_roles ur
-     JOIN system_role_policies rp ON ur.role_id = rp.role_id
-     JOIN system_policies p ON rp.policy_id = p.id
-     WHERE ur.user_id = ? AND p.name = ?`,
-    [user_id, policy_name]
-  );
-  return result[0].count > 0;
+  const roles = await prisma.userRole.findMany({
+    where: { user_id: Number(user_id) },
+    select: {
+      role: {
+        select: {
+          policies: {
+            select: {
+              policy: { select: { name: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return roles.some((role_link) => role_link.role.policies.some((role_policy) => role_policy.policy.name === policy_name));
 }
 
 export function policyMiddleware(required_policy) {

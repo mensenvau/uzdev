@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthGuard } from "@/lib/use-auth-guard";
@@ -12,6 +12,7 @@ import { StatsTab } from "@/app/forms/tabs/stats";
 
 export default function ManageFormPage() {
   const { user, checking, handleLogout } = useAuthGuard();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"general" | "fields" | "responses" | "stats">("general");
   const searchParams = useSearchParams();
   const formId = searchParams.get("id");
@@ -25,6 +26,21 @@ export default function ManageFormPage() {
     ],
     []
   );
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+    if (requestedTab && tabs.some((tab) => tab.key === requestedTab)) {
+      setActiveTab(requestedTab as any);
+    }
+  }, [searchParams, tabs]);
+
+  const handleTabChange = (tabKey: "general" | "fields" | "responses" | "stats") => {
+    setActiveTab(tabKey);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tabKey);
+    if (formId) params.set("id", formId);
+    router.replace(`/forms/manage?${params.toString()}`, { scroll: false });
+  };
 
   if (checking || !user) {
     return (
@@ -45,7 +61,7 @@ export default function ManageFormPage() {
           <Tabs>
             <TabsList className="bg-muted">
               {tabs.map((tab) => (
-                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => setActiveTab(tab.key as any)}>
+                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => handleTabChange(tab.key as any)}>
                   {tab.label}
                 </TabsTrigger>
               ))}

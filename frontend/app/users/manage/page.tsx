@@ -8,12 +8,11 @@ import { useAuthGuard } from "@/lib/use-auth-guard";
 import { GeneralTab } from "../tabs/general";
 import { RolesTab } from "../tabs/roles";
 import { GroupsTab } from "../tabs/groups";
-import { DepartmentTab } from "../tabs/department";
 import api from "@/lib/api";
 
 export function ManageUserPage() {
   const { user, checking, handleLogout } = useAuthGuard();
-  const [activeTab, setActiveTab] = useState<"general" | "roles" | "groups" | "department">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "roles" | "groups">("general");
   const [loadedUser, setLoadedUser] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(false);
   const searchParams = useSearchParams();
@@ -25,7 +24,6 @@ export function ManageUserPage() {
       { key: "general", label: "General" },
       { key: "roles", label: "Roles" },
       { key: "groups", label: "Groups" },
-      { key: "department", label: "Department" },
     ],
     []
   );
@@ -84,7 +82,6 @@ export function ManageUserPage() {
               {activeTab === "general" && <GeneralTab userId={userId} initialUser={loadedUser} onUserChange={setLoadedUser} />}
               {activeTab === "roles" && <RolesTab userId={userId} initialUser={loadedUser} onUserChange={setLoadedUser} />}
               {activeTab === "groups" && <GroupsTab userId={userId} initialUser={loadedUser} />}
-              {activeTab === "department" && <DepartmentTab userId={userId} initialUser={loadedUser} />}
             </>
           )}
         </div>

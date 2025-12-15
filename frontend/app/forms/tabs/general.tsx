@@ -40,10 +40,13 @@ export function GeneralTab({ formId }: { formId: string | null }) {
         await api.put(`/forms/${formId}`, form);
         toast.success("Form updated");
       } else {
-        await api.post("/forms", form);
-        toast.success("Form created");
+        const created = await api.post("/forms", form).then((res) => res.data.form || res.data);
+        toast.success("Form created. Add your questions next.");
+        if (created?.id) {
+          router.push(`/forms/manage?id=${created.id}&tab=fields`);
+          return;
+        }
       }
-      router.push("/forms");
     } catch (error: any) {
       toast.error(formatApiError(error, "Save failed"));
     } finally {

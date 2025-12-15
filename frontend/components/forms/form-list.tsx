@@ -1,30 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Link from "next/link";
 import api from "@/lib/api";
 
-interface Form {
-  _id: string;
+type FormRow = {
+  id: number;
   name: string;
-  description: string;
-  schema: any;
-  createdAt: string;
-}
+  description?: string;
+  is_active?: boolean;
+  field_count?: number;
+};
 
 export function FormList() {
-  const [forms, setForms] = useState<Form[]>([]);
+  const [forms, setForms] = useState<FormRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchForms = async () => {
       try {
-        const response = await api.get("/forms");
-        const payload = response.data;
+        const payload = await api.get("/forms").then((res) => res.data);
         const normalized = Array.isArray(payload?.forms) ? payload.forms : Array.isArray(payload) ? payload : [];
         setForms(normalized);
       } catch (err: any) {
@@ -69,30 +68,25 @@ export function FormList() {
             <tr className="text-left text-muted-foreground">
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Description</th>
-              <th className="px-4 py-3 w-32">Actions</th>
+              <th className="px-4 py-3">Fields</th>
+              <th className="px-4 py-3 w-32 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {forms.map((form: any) => (
-              <tr key={form._id || form.id} className="border-t">
+            {forms.map((form) => (
+              <tr key={form.id} className="border-t">
                 <td className="px-4 py-3 font-medium">{form.name}</td>
                 <td className="px-4 py-3 text-muted-foreground">{form.description || "No description"}</td>
-                <td className="px-4 py-3">
-                  <Link href={`/forms/${form._id || form.id}`}>
-                    <Button size="sm" variant="secondary" className="w-full">
+                <td className="px-4 py-3 text-muted-foreground">{form.field_count ?? "-"}</td>
+                <td className="px-4 py-3 text-right">
+                  <Link href={`/forms/${form.id}`}>
+                    <Button size="sm" variant="secondary">
                       Open
                     </Button>
                   </Link>
                 </td>
               </tr>
             ))}
-            {forms.length === 0 && (
-              <tr>
-                <td colSpan={3} className="px-4 py-6 text-center text-muted-foreground">
-                  No forms available
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>

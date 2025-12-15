@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
-import { ClipboardList, LayoutDashboard, ShieldCheck, Users, LogOut, Sparkles, ShieldHalf, Building2, PanelsTopLeft, UserPlus2, X } from "lucide-react";
+import { ClipboardList, LayoutDashboard, ShieldCheck, Users, LogOut, Sparkles, ShieldHalf, PanelsTopLeft, UserPlus2, X } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -19,7 +19,6 @@ export const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Forms", href: "/forms", icon: ClipboardList },
     { label: "Users", href: "/users", icon: Users },
-    { label: "Departments", href: "/departments", icon: Building2 },
     { label: "Groups", href: "/groups", icon: UserPlus2 },
     { label: "Roles", href: "/roles", icon: ShieldCheck },
     { label: "Policies", href: "/policies", icon: ShieldHalf },
@@ -29,7 +28,6 @@ export const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Forms", href: "/forms", icon: ClipboardList },
     { label: "Users", href: "/users", icon: Users },
-    { label: "Departments", href: "/departments", icon: Building2 },
     { label: "Groups", href: "/groups", icon: UserPlus2 },
     { label: "Roles", href: "/roles", icon: ShieldCheck },
     { label: "Policies", href: "/policies", icon: ShieldHalf },
@@ -38,7 +36,6 @@ export const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
   manager: [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Forms", href: "/forms", icon: ClipboardList },
-    { label: "Departments", href: "/departments", icon: Building2 },
     { label: "Groups", href: "/groups", icon: UserPlus2 },
     { label: "Form Builder", href: "/forms/builder", icon: PanelsTopLeft },
   ],

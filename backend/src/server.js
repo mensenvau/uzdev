@@ -1,7 +1,5 @@
-import dotenv from "dotenv";
+import "./utils/env.utils.js";
 import app from "./app.js";
-
-dotenv.config({});
 
 const APP_PORT = process.env.APP_PORT || 3000;
 const APP_HOST = process.env.APP_HOST || "127.0.0.1";

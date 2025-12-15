@@ -89,7 +89,6 @@ export default function DashboardPage() {
   }
 
   const groups = Array.isArray(user?.groups) ? user.groups : [];
-  const departments = Array.isArray(user?.departments) ? user.departments : [];
 
   return (
     <DashboardShell
@@ -187,22 +186,6 @@ export default function DashboardPage() {
                         {groups.map((g: any) => (
                           <span key={g.id} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm">
                             {g.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-3 py-3 font-semibold text-muted-foreground">Departments</td>
-                  <td className="px-3 py-3">
-                    {departments.length === 0 ? (
-                      <span className="text-muted-foreground">No departments</span>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {departments.map((d: any) => (
-                          <span key={d.id} className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-sm text-emerald-800">
-                            {d.name}
                           </span>
                         ))}
                       </div>

@@ -5,7 +5,7 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { formatApiError } from "@/lib/format-api-error";
 
-type ResponseRow = { id: number; user_id?: number; status?: string; created_at?: string; values?: any };
+type ResponseRow = { id: number; user_id?: number; status?: string; created_at?: string; total_score?: number };
 
 export function ResponsesTab({ formId }: { formId: string | null }) {
   const [responses, setResponses] = useState<ResponseRow[]>([]);
@@ -22,7 +22,6 @@ export function ResponsesTab({ formId }: { formId: string | null }) {
         const data = await api.get(`/forms/${formId}/responses`).then((res) => res.data.responses || res.data);
         setResponses(Array.isArray(data) ? data : []);
       } catch (error: any) {
-        // backend might not support yet
         toast.error(formatApiError(error, "Failed to load responses"));
       } finally {
         setLoading(false);
@@ -39,6 +38,7 @@ export function ResponsesTab({ formId }: { formId: string | null }) {
             <th className="px-3 py-2">ID</th>
             <th className="px-3 py-2">User</th>
             <th className="px-3 py-2">Status</th>
+            <th className="px-3 py-2">Score</th>
             <th className="px-3 py-2">Created</th>
           </tr>
         </thead>
@@ -46,21 +46,22 @@ export function ResponsesTab({ formId }: { formId: string | null }) {
           {responses.map((r) => (
             <tr key={r.id} className="border-t">
               <td className="px-3 py-2 font-medium">{r.id}</td>
-              <td className="px-3 py-2 text-muted-foreground">{r.user_id ?? "—"}</td>
-              <td className="px-3 py-2 text-muted-foreground">{r.status || "—"}</td>
-              <td className="px-3 py-2 text-muted-foreground">{r.created_at || "—"}</td>
+              <td className="px-3 py-2 text-muted-foreground">{r.user_id ?? "-"}</td>
+              <td className="px-3 py-2 text-muted-foreground capitalize">{r.status || "-"}</td>
+              <td className="px-3 py-2 text-muted-foreground">{r.total_score ?? "-"}</td>
+              <td className="px-3 py-2 text-muted-foreground">{r.created_at || "-"}</td>
             </tr>
           ))}
           {responses.length === 0 && !loading && (
             <tr>
-              <td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">
+              <td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">
                 No responses yet.
               </td>
             </tr>
           )}
           {loading && (
             <tr>
-              <td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">
+              <td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">
                 Loading...
               </td>
             </tr>

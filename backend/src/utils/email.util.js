@@ -1,10 +1,8 @@
-import fs from "fs";
-import path from "path";
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
+import "./env.utils.js";
 import { getDirname, resolveFrom } from "./path.util.js";
-
-dotenv.config({});
+import nodemailer from "nodemailer";
+import path from "path";
+import fs from "fs";
 
 const EMAIL_ENABLED = (process.env.EMAIL_ENABLED || "false").toLowerCase() === "true";
 const EMAIL_HOST = process.env.EMAIL_HOST;

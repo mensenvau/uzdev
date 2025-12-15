@@ -1,28 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import api from "@/lib/api";
 
-interface FormField {
-  name: string;
-  type: string;
-  label: string;
-  required: boolean;
-  placeholder?: string;
-}
+type FormFieldOption = {
+  id?: number;
+  value: string;
+  label?: string;
+  score?: number;
+};
 
-interface Form {
-  _id: string;
+type FormField = {
+  id: number;
+  field_key: string;
+  label: string;
+  field_type: string;
+  is_required?: boolean;
+  options?: FormFieldOption[];
+  settings?: Record<string, any>;
+};
+
+type FormData = {
+  id: number;
   name: string;
-  description: string;
-  schema: {
-    fields: FormField[];
-  };
-}
+  description?: string;
+  fields: FormField[];
+};
 
 interface FormDetailProps {
   formId: string;
@@ -30,26 +38,30 @@ interface FormDetailProps {
 
 export function FormDetail({ formId }: FormDetailProps) {
   const router = useRouter();
-  const [form, setForm] = useState<Form | null>(null);
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [form, setForm] = useState<FormData | null>(null);
+  const [formValues, setFormValues] = useState<Record<number, any>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  const fieldCount = useMemo(() => form?.fields?.length ?? 0, [form?.fields]);
 
   useEffect(() => {
     const fetchForm = async () => {
       try {
-        const response = await api.get(`/forms/${formId}`);
-        setForm(response.data);
-
-        const initialData: Record<string, any> = {};
-        response.data.schema.fields.forEach((field: FormField) => {
-          initialData[field.name] = "";
+        const payload = await api.get(`/forms/${formId}`).then((res) => res.data);
+        const resolved = payload?.form || payload;
+        if (!resolved) throw new Error("Form not found");
+        const fields = Array.isArray(resolved.fields) ? resolved.fields : [];
+        const initialValues: Record<number, any> = {};
+        fields.forEach((field: FormField) => {
+          initialValues[field.id] = field.field_type === "checkbox" ? [] : "";
         });
-        setFormData(initialData);
+        setForm({ ...resolved, fields });
+        setFormValues(initialValues);
       } catch (err: any) {
-        setError("Failed to load form");
+        setError(err.response?.data?.message || "Failed to load form");
       } finally {
         setLoading(false);
       }
@@ -58,8 +70,18 @@ export function FormDetail({ formId }: FormDetailProps) {
     fetchForm();
   }, [formId]);
 
-  const handleChange = (name: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (fieldId: number, value: any) => {
+    setFormValues((prev) => ({ ...prev, [fieldId]: value }));
+  };
+
+  const toggleCheckbox = (fieldId: number, value: string) => {
+    setFormValues((prev) => {
+      const current = Array.isArray(prev[fieldId]) ? prev[fieldId] : [];
+      if (current.includes(value)) {
+        return { ...prev, [fieldId]: current.filter((v) => v !== value) };
+      }
+      return { ...prev, [fieldId]: [...current, value] };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,13 +90,19 @@ export function FormDetail({ formId }: FormDetailProps) {
     setSubmitting(true);
 
     try {
-      await api.post(`/forms/${formId}/submit`, { data: formData });
+      const answers = (form?.fields || []).map((field) => ({
+        field_id: field.id,
+        value: formValues[field.id],
+      }));
+      await api.post(`/forms/${formId}/submit`, { answers });
       setSuccess(true);
       setTimeout(() => {
         router.push("/forms");
-      }, 2000);
+      }, 1500);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to submit form");
+      const message = err.response?.data?.message || "Failed to submit form";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -106,10 +134,9 @@ export function FormDetail({ formId }: FormDetailProps) {
     return (
       <Card>
         <CardContent className="py-8">
-          <div className="text-center space-y-4">
-            <div className="text-4xl">✓</div>
-            <h3 className="text-xl font-semibold">Form Submitted Successfully</h3>
-            <p className="text-muted-foreground">Redirecting...</p>
+          <div className="text-center space-y-3">
+            <h3 className="text-xl font-semibold">Form submitted</h3>
+            <p className="text-muted-foreground">Thanks! Redirecting to forms.</p>
           </div>
         </CardContent>
       </Card>
@@ -118,25 +145,88 @@ export function FormDetail({ formId }: FormDetailProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{form.name}</CardTitle>
-        <CardDescription>{form.description}</CardDescription>
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl">{form.name}</CardTitle>
+        <CardDescription>{form.description || "Fill out the questions below."}</CardDescription>
+        <p className="text-xs text-muted-foreground">Questions: {fieldCount}</p>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {error && <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">{error}</div>}
 
-          {form.schema.fields.map((field) => (
-            <div key={field.name} className="space-y-2">
-              <label htmlFor={field.name} className="text-sm font-medium">
-                {field.label}
-                {field.required && <span className="text-destructive ml-1">*</span>}
-              </label>
-              <Input id={field.name} type={field.type} placeholder={field.placeholder} value={formData[field.name] || ""} onChange={(e) => handleChange(field.name, e.target.value)} required={field.required} disabled={submitting} />
+          {(form.fields || []).map((field) => (
+            <div key={field.id} className="space-y-2 rounded-xl border p-4">
+              <div className="flex items-start justify-between gap-3">
+                <label htmlFor={field.field_key} className="text-sm font-medium">
+                  {field.label}
+                  {field.is_required && <span className="text-destructive ml-1">*</span>}
+                </label>
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">{field.field_type}</span>
+              </div>
+
+              {["text", "textarea", "number"].includes(field.field_type) && (
+                <>
+                  {field.field_type === "textarea" ? (
+                    <textarea id={field.field_key} className="w-full rounded-md border px-3 py-2 text-sm" rows={field.settings?.rows || 4} value={formValues[field.id] ?? ""} onChange={(e) => handleChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} />
+                  ) : (
+                    <Input
+                      id={field.field_key}
+                      type={field.field_type === "number" ? "number" : "text"}
+                      value={formValues[field.id] ?? ""}
+                      onChange={(e) => handleChange(field.id, field.field_type === "number" ? Number(e.target.value) : e.target.value)}
+                      required={field.is_required}
+                      disabled={submitting}
+                    />
+                  )}
+                </>
+              )}
+
+              {["select", "table_select"].includes(field.field_type) &&
+                ((field.options || []).length > 0 ? (
+                  <select id={field.field_key} className="w-full rounded-md border px-3 py-2 text-sm" value={formValues[field.id] ?? ""} onChange={(e) => handleChange(field.id, e.target.value)} required={field.is_required} disabled={submitting}>
+                    <option value="">Select an option</option>
+                    {(field.options || []).map((option) => (
+                      <option key={option.id || option.value} value={option.value}>
+                        {option.label || option.value}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input id={field.field_key} value={formValues[field.id] ?? ""} onChange={(e) => handleChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} placeholder="Enter a value" />
+                ))}
+
+              {["radio", "score"].includes(field.field_type) && (
+                <div className="space-y-2">
+                  {(field.options || []).map((option) => (
+                    <label key={option.id || option.value} className="flex items-center gap-2 text-sm">
+                      <input type="radio" name={field.field_key} value={option.value} checked={formValues[field.id] === option.value} onChange={(e) => handleChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} />
+                      <span>{option.label || option.value}</span>
+                      {typeof option.score === "number" && <span className="text-xs text-muted-foreground">(score {option.score})</span>}
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {field.field_type === "checkbox" && (
+                <div className="space-y-2">
+                  {(field.options || []).map((option) => {
+                    const current = Array.isArray(formValues[field.id]) ? formValues[field.id] : [];
+                    return (
+                      <label key={option.id || option.value} className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" value={option.value} checked={current.includes(option.value)} onChange={() => toggleCheckbox(field.id, option.value)} disabled={submitting} />
+                        <span>{option.label || option.value}</span>
+                        {typeof option.score === "number" && <span className="text-xs text-muted-foreground">(score {option.score})</span>}
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+
+              {field.settings?.description && <p className="text-xs text-muted-foreground">{field.settings.description}</p>}
             </div>
           ))}
 
-          <Button type="submit" className="w-full" disabled={submitting}>
+          <Button type="submit" className="w-full" disabled={submitting || fieldCount === 0}>
             {submitting ? "Submitting..." : "Submit"}
           </Button>
         </form>
