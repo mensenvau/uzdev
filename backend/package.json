@@ -23,7 +23,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@prisma/client": "5.22.0",
+    "@prisma/client": "7.1.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "cross-env": "^7.0.3",
@@ -41,7 +41,7 @@
     "zod": "4.1.13"
   },
   "devDependencies": {
-    "prisma": "5.22.0"
+    "prisma": "7.1.0"
   },
   "prisma": {
     "seed": "node prisma/seeds/index.js"

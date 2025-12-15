@@ -4,8 +4,231 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
-/// <reference path="./schemas/system.prisma" />
-/// <reference path="./schemas/dss.prisma" />
+enum AccessType {
+  role
+  group
+  link
+}
+
+enum FieldType {
+  text
+  textarea
+  number
+  select
+  checkbox
+  radio
+  table_select
+  score
+}
+
+enum FieldMode {
+  question
+  check
+}
+
+enum ResponseStatus {
+  draft
+  submitted
+  reviewed
+}
+model User {
+  id               Int        @id @default(autoincrement())
+  email            String?    @unique
+  username         String?    @unique
+  first_name       String?    @db.VarChar(100)
+  last_name        String?    @db.VarChar(100)
+  phone            String?    @db.VarChar(50)
+  password         String?    @db.VarChar(255)
+  google_id        String?    @unique
+  default_role_id  Int?
+  default_role     Role?      @relation("DefaultRole", fields: [default_role_id], references: [id])
+  created_at       DateTime   @default(now())
+  updated_at       DateTime   @updatedAt
+  roles            UserRole[]
+  groups           GroupUser[]
+  forms            Form[]     @relation("FormCreatedBy")
+  responses        FormResponse[]
+
+  @@map("system_users")
+}
+
+model Role {
+  id              Int          @id @default(autoincrement())
+  name            String       @unique
+  description     String?
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+  policies        RolePolicy[]
+  users           UserRole[]
+  defaultForUsers User[]       @relation("DefaultRole")
+
+  @@map("system_roles")
+}
+
+model Policy {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  description String?
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  roles       RolePolicy[]
+
+  @@map("system_policies")
+}
+
+model RolePolicy {
+  id         Int      @id @default(autoincrement())
+  role_id    Int
+  policy_id  Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  role       Role     @relation(fields: [role_id], references: [id])
+  policy     Policy   @relation(fields: [policy_id], references: [id])
+
+  @@unique([role_id, policy_id], map: "unique_role_policy")
+  @@map("system_role_policies")
+}
+
+model UserRole {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  role_id    Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       User     @relation(fields: [user_id], references: [id])
+  role       Role     @relation(fields: [role_id], references: [id])
+
+  @@unique([user_id, role_id], map: "unique_user_role")
+  @@map("system_user_roles")
+}
+
+model Group {
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String?
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+  users       GroupUser[]
+
+  @@map("system_groups")
+}
+
+model GroupUser {
+  id         Int      @id @default(autoincrement())
+  group_id   Int
+  user_id    Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  group      Group    @relation(fields: [group_id], references: [id])
+  user       User     @relation(fields: [user_id], references: [id])
+
+  @@unique([group_id, user_id], map: "unique_group_user")
+  @@map("system_group_users")
+}
+
+model Form {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?
+  created_by  Int?
+  is_active   Boolean           @default(true)
+  created_at  DateTime          @default(now())
+  updated_at  DateTime          @updatedAt
+  creator     User?             @relation("FormCreatedBy", fields: [created_by], references: [id])
+  access      FormAccess[]
+  fields      FormField[]
+  responses   FormResponse[]
+
+  @@map("system_forms")
+}
+
+model FormAccess {
+  id          Int        @id @default(autoincrement())
+  form_id     Int
+  access_type AccessType @default(role)
+  access_value String
+  expires_at  DateTime?
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+  form        Form       @relation(fields: [form_id], references: [id])
+
+  @@map("system_form_access")
+}
+
+model FormField {
+  id          Int        @id @default(autoincrement())
+  form_id     Int
+  field_key   String
+  label       String
+  field_type  FieldType
+  mode        FieldMode  @default(question)
+  is_required Boolean    @default(false)
+  field_order Int        @default(0)
+  settings    Json?
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+  form        Form       @relation(fields: [form_id], references: [id])
+  options     FormFieldOption[]
+  tableSource FormFieldTableSource?
+  values      FormResponseValue[]
+
+  @@map("system_form_fields")
+}
+
+model FormFieldOption {
+  id           Int       @id @default(autoincrement())
+  field_id     Int
+  value        String
+  label        String?
+  score        Int       @default(0)
+  option_order Int       @default(0)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  field        FormField @relation(fields: [field_id], references: [id])
+
+  @@map("system_form_field_options")
+}
+
+model FormFieldTableSource {
+  id                 Int       @id @default(autoincrement())
+  field_id           Int       @unique
+  source_table       String
+  source_value_column String
+  source_label_column String
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  field              FormField @relation(fields: [field_id], references: [id])
+
+  @@map("system_form_field_table_sources")
+}
+
+model FormResponse {
+  id          Int            @id @default(autoincrement())
+  form_id     Int
+  user_id     Int?
+  total_score Int            @default(0)
+  status      ResponseStatus @default(draft)
+  created_at  DateTime       @default(now())
+  updated_at  DateTime       @updatedAt
+  form        Form           @relation(fields: [form_id], references: [id])
+  user        User?          @relation(fields: [user_id], references: [id])
+  values      FormResponseValue[]
+
+  @@map("system_form_responses")
+}
+
+model FormResponseValue {
+  id          Int          @id @default(autoincrement())
+  response_id Int
+  field_id    Int
+  value       String?
+  score       Int          @default(0)
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  response    FormResponse @relation(fields: [response_id], references: [id])
+  field       FormField    @relation(fields: [field_id], references: [id])
+
+  @@map("system_form_response_values")
+}
