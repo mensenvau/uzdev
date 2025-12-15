@@ -81,7 +81,7 @@ Edit `schema.prisma` and add:
 Create `seeds/hr.seed.js`:
 
 ```javascript
-import { prisma } from "../../src/utils/db.util.js";
+import { prisma } from "../../src/utils/prisma.util.js";
 
 export default async function hrSeed() {
   console.log("🌱 Seeding HR module...");
@@ -125,10 +125,10 @@ npm run prisma:seed
 
 ### Import from Centralized Utility
 
-**Always import from `/src/utils/db.util.js`** - never create new PrismaClient instances:
+**Always import from `/src/utils/prisma.util.js`** - never create new PrismaClient instances:
 
 ```javascript
-import { prisma } from "../../utils/db.util.js";
+import { prisma } from "../../utils/prisma.util.js";
 
 // Query any module's tables
 const users = await prisma.user.findMany();           // system_users
@@ -138,7 +138,7 @@ const employees = await prisma.hrEmployee.findMany(); // hr_employees
 ### Using Transactions
 
 ```javascript
-import { prisma } from "../../utils/db.util.js";
+import { prisma } from "../../utils/prisma.util.js";
 
 await prisma.$transaction(async (tx) => {
   const user = await tx.user.create({ data: { ... } });
@@ -186,7 +186,7 @@ DATABASE_URL=mysql://user:password@localhost:3306/core_app
 1. **Module Naming:** Use consistent prefixes (`system_`, `dss_`, `hr_`, etc.)
 2. **One Module = One Schema File:** Keep module tables together
 3. **Seed Order:** System module should seed first (dependencies)
-4. **Import Pattern:** Always use `import { prisma } from 'utils/db.util.js'`
+4. **Import Pattern:** Always use `import { prisma } from 'utils/prisma.util.js'`
 5. **Migrations:** Name them descriptively (`add_hr_module`, `update_user_fields`, etc.)
 
 ## 🔍 Useful Commands

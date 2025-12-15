@@ -1,5 +1,5 @@
 import { sendForbidden } from "../utils/response.util.js";
-import { prisma } from "../utils/db.util.js";
+import { prisma } from "../utils/prisma.util.js";
 
 export async function userHasPolicy(user_id, policy_name) {
   const roles = await prisma.userRole.findMany({

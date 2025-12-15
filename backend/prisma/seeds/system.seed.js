@@ -1,4 +1,4 @@
-import { prisma } from "../../src/utils/db.util.js";
+import { prisma } from "../../src/utils/prisma.util.js";
 import { hashPassword } from "../../src/utils/password.util.js";
 
 async function upsertRole(name, description) {

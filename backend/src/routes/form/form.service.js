@@ -1,4 +1,4 @@
-import { prisma } from "../../utils/db.util.js";
+import { prisma } from "../../utils/prisma.util.js";
 
 const OPTION_FIELD_TYPES = ["select", "checkbox", "radio", "score"];
 const TABLE_FIELD_TYPE = "table_select";

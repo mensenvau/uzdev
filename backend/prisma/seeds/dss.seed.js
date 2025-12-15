@@ -1,4 +1,4 @@
-import { prisma } from "../../src/utils/db.util.js";
+import { prisma } from "../../src/utils/prisma.util.js";
 
 /**
  * DSS Module Seed
