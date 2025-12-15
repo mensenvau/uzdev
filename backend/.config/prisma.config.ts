@@ -1,12 +1,14 @@
+import "../src/utils/env.utils";
 import { defineConfig } from "prisma/config";
-import { config } from "dotenv";
-import { resolve } from "path";
 
-// Load .env from root directory
-config({ path: resolve(__dirname, "../../.env") });
+declare var process: { env: { DATABASE_URL: string } };
 
 export default defineConfig({
+  schema: "../prisma",
   datasource: {
     url: process.env.DATABASE_URL || "",
+  },
+  migrations: {
+    seed: "node ./prisma/seeds/index.js",
   },
 });
