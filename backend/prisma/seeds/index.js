@@ -11,11 +11,9 @@
  * 3. Add it to the seeds array
  */
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../src/utils/db.util.js";
 import systemSeed from "./system.seed.js";
 import dssSeed from "./dss.seed.js";
-
-const prisma = new PrismaClient();
 
 async function main() {
   console.log("🚀 Starting database seeding...\n");

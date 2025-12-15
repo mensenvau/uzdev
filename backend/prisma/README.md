@@ -81,9 +81,7 @@ Edit `schema.prisma` and add:
 Create `seeds/hr.seed.js`:
 
 ```javascript
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../../src/utils/db.util.js";
 
 export default async function hrSeed() {
   console.log("🌱 Seeding HR module...");

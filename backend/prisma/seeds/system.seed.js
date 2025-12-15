@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../../src/utils/db.util.js";
 import { hashPassword } from "../../src/utils/password.util.js";
-
-const prisma = new PrismaClient();
 
 async function upsertRole(name, description) {
   return prisma.role.upsert({
