@@ -1,15 +1,13 @@
-export function formatApiError(error, fallback = "Unexpected error") {
-  if (!error?.response?.data) return fallback;
-  const { message, errors } = error.response.data;
-  const details =
-    errors && typeof errors === "object"
-      ? Object.values(errors)
-          .flat()
-          .join(" ")
-      : "";
-  return `${message || fallback}${details ? `: ${details}` : ""}`;
-}
+/**
+ * Error Utility
+ * Error formatting helpers
+ */
 
-export default {
-  formatApiError,
+const formatApiError = (error) => {
+  if (error?.errors && Array.isArray(error.errors)) {
+    return error.errors.map((err) => err.message).join(', ');
+  }
+  return error.message || 'Unknown error';
 };
+
+module.exports = { formatApiError };

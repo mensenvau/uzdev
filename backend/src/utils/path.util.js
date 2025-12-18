@@ -1,15 +1,23 @@
-import path from "path";
-import { fileURLToPath } from "url";
+/**
+ * Path Utility
+ * Helper functions for working with file paths
+ */
 
-export function getDirname(importMeta) {
-  return path.dirname(fileURLToPath(importMeta.url));
+const path = require('path');
+const { fileURLToPath } = require('url');
+
+// For CommonJS, __dirname is available directly
+// This utility is kept for compatibility if needed
+
+function getRootPath() {
+  return path.join(__dirname, '../..');
 }
 
-export function resolveFrom(fromDir, ...segments) {
-  return path.resolve(fromDir, ...segments);
+function getSrcPath() {
+  return path.join(__dirname, '..');
 }
 
-export default {
-  getDirname,
-  resolveFrom,
+module.exports = {
+  getRootPath,
+  getSrcPath,
 };

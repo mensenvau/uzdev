@@ -1,72 +1,54 @@
-import jwt from "jsonwebtoken";
+/**
+ * JWT Utility
+ * Token generation and verification
+ */
 
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "access-secret-key";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh-secret-key";
-const JWT_PASSWORD_RESET_SECRET = process.env.JWT_PASSWORD_RESET_SECRET || "password-reset-secret-key";
-const JWT_FORM_ACCESS_SECRET = process.env.JWT_FORM_ACCESS_SECRET || "form-access-secret-key";
+const jwt = require('jsonwebtoken');
 
-export function jwtGenerateAccess(payload) {
-  return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: "15m" });
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret-key';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh-secret-key';
+const JWT_PASSWORD_RESET_SECRET = process.env.JWT_PASSWORD_RESET_SECRET || 'password-reset-secret-key';
+const JWT_FORM_ACCESS_SECRET = process.env.JWT_FORM_ACCESS_SECRET || 'form-access-secret-key';
+
+function signAccessToken(payload) {
+  return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: '15m' });
 }
 
-export function jwtGenerateRefresh(payload) {
-  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: "7d" });
+function signRefreshToken(payload) {
+  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: '7d' });
 }
 
-export function jwtGeneratePasswordReset(user_id) {
-  return jwt.sign({ user_id }, JWT_PASSWORD_RESET_SECRET, { expiresIn: "1h" });
+function signPasswordResetToken(payload) {
+  return jwt.sign(payload, JWT_PASSWORD_RESET_SECRET, { expiresIn: '1h' });
 }
 
-export function jwtGenerateFormAccess(form_id, expires_at = null) {
-  const payload = { form_id };
-  const options = {};
-
-  if (expires_at) {
-    options.expiresIn = Math.floor((new Date(expires_at).getTime() - Date.now()) / 1000);
-  }
-
-  return jwt.sign(payload, JWT_FORM_ACCESS_SECRET, options);
+function signFormAccessToken(payload) {
+  return jwt.sign(payload, JWT_FORM_ACCESS_SECRET, { expiresIn: '30d' });
 }
 
-export function jwtVerifyAccess(token) {
-  try {
-    return jwt.verify(token, JWT_ACCESS_SECRET);
-  } catch (error) {
-    return null;
-  }
+function verifyAccessToken(token) {
+  return jwt.verify(token, JWT_ACCESS_SECRET);
 }
 
-export function jwtVerifyRefresh(token) {
-  try {
-    return jwt.verify(token, JWT_REFRESH_SECRET);
-  } catch (error) {
-    return null;
-  }
+function verifyRefreshToken(token) {
+  return jwt.verify(token, JWT_REFRESH_SECRET);
 }
 
-export function jwtVerifyPasswordReset(token) {
-  try {
-    return jwt.verify(token, JWT_PASSWORD_RESET_SECRET);
-  } catch (error) {
-    return null;
-  }
+function verifyPasswordResetToken(token) {
+  return jwt.verify(token, JWT_PASSWORD_RESET_SECRET);
 }
 
-export function jwtVerifyFormAccess(token) {
-  try {
-    return jwt.verify(token, JWT_FORM_ACCESS_SECRET);
-  } catch (error) {
-    return null;
-  }
+function verifyFormAccessToken(token) {
+  return jwt.verify(token, JWT_FORM_ACCESS_SECRET);
 }
 
-export default {
-  jwtGenerateAccess,
-  jwtGenerateRefresh,
-  jwtGeneratePasswordReset,
-  jwtGenerateFormAccess,
-  jwtVerifyAccess,
-  jwtVerifyRefresh,
-  jwtVerifyPasswordReset,
-  jwtVerifyFormAccess,
+module.exports = {
+  signAccessToken,
+  signRefreshToken,
+  signPasswordResetToken,
+  signFormAccessToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+  verifyPasswordResetToken,
+  verifyFormAccessToken,
 };
