@@ -1,47 +1,44 @@
 {
   "name": "core-app-backend",
   "version": "1.0.0",
-  "description": "Professional core app backend with auth, roles, policies, groups, and advanced forms",
-  "type": "module",
+  "description": "Template: Professional backend with auth, RBAC, policies, groups, and dynamic forms - MySQL2 + Express",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "prisma:generate": "npx prisma generate",
-    "prisma:studio": "npx prisma studio",
-    "prisma:migrate": "npx prisma migrate deploy",
-    "prisma:migrate:dev": "npx prisma migrate dev",
-    "prisma:seed": "npx prisma db seed"
+    "dev": "nodemon src/server.js",
+    "db:init": "node database/scripts/init.js",
+    "db:seed": "node database/scripts/seed.js",
+    "db:reset": "node database/scripts/reset.js",
+    "db:module:create": "node database/scripts/create-module.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "express",
     "mysql",
+    "mysql2",
     "auth",
     "rbac",
-    "forms"
+    "policies",
+    "forms",
+    "template",
+    "backend-template"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@prisma/adapter-mariadb": "^7.1.0",
-    "@prisma/client": "7.1.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
-    "cross-env": "^7.0.3",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "google-auth-library": "^10.5.0",
     "helmet": "^7.1.0",
-    "i": "^0.3.7",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "mysql2": "^3.6.5",
     "nodemailer": "^7.0.11",
-    "nodemon": "^3.1.11",
-    "npm": "^11.7.0",
-    "zod": "4.1.13"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "prisma": "7.1.0"
+    "nodemon": "^3.1.11"
   }
 }
