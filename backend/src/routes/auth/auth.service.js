@@ -1,8 +1,8 @@
-import { comparePassword, hashPassword } from "../../utils/password.util.js";
-import { jwtGenerateAccess, jwtGenerateRefresh, jwtVerifyRefresh, jwtGeneratePasswordReset, jwtVerifyPasswordReset } from "../../utils/jwt.util.js";
-import { prisma } from "../../utils/prisma.util.js";
-import { sendPasswordResetEmail } from "../../utils/email.util.js";
-import { OAuth2Client } from "google-auth-library";
+const { comparePassword, hashPassword } = require('../../utils/password.util');
+const { signAccessToken, signRefreshToken, verifyRefreshToken, signPasswordResetToken, verifyPasswordResetToken } = require('../../utils/jwt.util');
+const { prisma } = require('../../utils/prisma.util');
+const { sendPasswordResetEmail } = require('../../utils/email.util');
+const { OAuth2Client } = require('google-auth-library');
 
 const google_client_id = process.env.GOOGLE_CLIENT_ID || "";
 const google_client = google_client_id ? new OAuth2Client(google_client_id) : null;
@@ -74,13 +74,13 @@ export async function fnAuthSignUp(email, first_name, last_name, phone, password
   };
 
   return {
-    access_token: jwtGenerateAccess(token_payload),
-    refresh_token: jwtGenerateRefresh({ user_id: created_user.id }),
+    access_token: signAccessToken(token_payload),
+    refresh_token: signRefreshToken({ user_id: created_user.id }),
     user: hydrated_user,
   };
 }
 
-export async function fnAuthSignIn(email, password) {
+async function fnAuthSignIn(email, password) {
   const user = await prisma.user.findUnique({
     where: { email },
     select: { id: true, email: true, username: true, first_name: true, last_name: true, phone: true, password: true },
@@ -93,18 +93,18 @@ export async function fnAuthSignIn(email, password) {
   const hydrated_user = await getUserWithRoles(user.id);
 
   return {
-    access_token: jwtGenerateAccess({
+    access_token: signAccessToken({
       user_id: user.id,
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
     }),
-    refresh_token: jwtGenerateRefresh({ user_id: user.id }),
+    refresh_token: signRefreshToken({ user_id: user.id }),
     user: hydrated_user,
   };
 }
 
-export async function fnAuthSignInWithGoogle(id_token) {
+async function fnAuthSignInWithGoogle(id_token) {
   if (!google_client) throw new Error("Google client not configured");
 
   const ticket = await google_client.verifyIdToken({
@@ -147,42 +147,51 @@ export async function fnAuthSignInWithGoogle(id_token) {
   const hydrated_user = await getUserWithRoles(user.id);
 
   return {
-    access_token: jwtGenerateAccess({
+    access_token: signAccessToken({
       user_id: user.id,
       email: hydrated_user?.email || email,
       first_name: hydrated_user?.first_name || first_name,
       last_name: hydrated_user?.last_name || last_name,
     }),
-    refresh_token: jwtGenerateRefresh({ user_id: user.id }),
+    refresh_token: signRefreshToken({ user_id: user.id }),
     user: hydrated_user,
   };
 }
 
-export async function fnAuthRefreshToken(refresh_token) {
-  const decoded = jwtVerifyRefresh(refresh_token);
+async function fnAuthRefreshToken(refresh_token) {
+  const decoded = verifyRefreshToken(refresh_token);
   if (!decoded) throw new Error("Invalid refresh token");
 
   const user = await prisma.user.findUnique({ where: { id: Number(decoded.user_id) }, select: { id: true } });
   if (!user) throw new Error("User not found");
 
   return {
-    access_token: jwtGenerateAccess({ user_id: user.id }),
-    refresh_token: jwtGenerateRefresh({ user_id: user.id }),
+    access_token: signAccessToken({ user_id: user.id }),
+    refresh_token: signRefreshToken({ user_id: user.id }),
   };
 }
 
-export async function fnAuthForgotPassword(email) {
+async function fnAuthForgotPassword(email) {
   const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   if (!user) return;
-  const token = jwtGeneratePasswordReset(user.id);
+  const token = signPasswordResetToken(user.id);
   const frontend_url = process.env.FRONTEND_URL || "http://localhost:3000";
   const reset_url = `${frontend_url}/auth/reset?token=${token}`;
   await sendPasswordResetEmail(email, reset_url);
 }
 
-export async function fnAuthResetPassword(token, new_password) {
-  const decoded = jwtVerifyPasswordReset(token);
+async function fnAuthResetPassword(token, new_password) {
+  const decoded = verifyPasswordResetToken(token);
   if (!decoded?.user_id) throw new Error("Invalid or expired reset token");
   const hashed = await hashPassword(new_password);
   await prisma.user.update({ where: { id: Number(decoded.user_id) }, data: { password: hashed } });
 }
+
+module.exports = {
+  fnAuthSignUp,
+  fnAuthSignIn,
+  fnAuthSignInWithGoogle,
+  fnAuthRefreshToken,
+  fnAuthForgotPassword,
+  fnAuthResetPassword,
+};

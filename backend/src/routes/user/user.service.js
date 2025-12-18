@@ -1,7 +1,7 @@
-import { hashPassword } from "../../utils/password.util.js";
-import { prisma } from "../../utils/prisma.util.js";
+const { hashPassword } = require('../../utils/password.util');
+const { prisma } = require('../../utils/prisma.util');
 
-export async function fnUserList({ limit = 10, page = 1, search = "" }) {
+async function fnUserList({ limit = 10, page = 1, search = "" }) {
   const safe_limit = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
   const safe_page = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
   const skip = (safe_page - 1) * safe_limit;
@@ -22,7 +22,7 @@ export async function fnUserList({ limit = 10, page = 1, search = "" }) {
   return { limit: safe_limit, page: safe_page, total, users };
 }
 
-export async function fnUserGet(id) {
+async function fnUserGet(id) {
   const user = await prisma.user.findUnique({
     where: { id: Number(id) },
     include: {
@@ -46,7 +46,7 @@ export async function fnUserGet(id) {
   };
 }
 
-export async function fnUserCreate(email, password, first_name, last_name, phone) {
+async function fnUserCreate(email, password, first_name, last_name, phone) {
   const hashed_password = await hashPassword(password);
   const user = await prisma.user.create({
     data: { email, username: email, first_name, last_name, phone, password: hashed_password },
@@ -54,7 +54,7 @@ export async function fnUserCreate(email, password, first_name, last_name, phone
   return await fnUserGet(user.id);
 }
 
-export async function fnUserUpdate(id, { email, first_name, last_name, phone, default_role_id }) {
+async function fnUserUpdate(id, { email, first_name, last_name, phone, default_role_id }) {
   const data = {};
 
   if (email !== undefined) data.email = email;
@@ -77,7 +77,7 @@ export async function fnUserUpdate(id, { email, first_name, last_name, phone, de
   return await fnUserGet(id);
 }
 
-export async function fnUserDelete(id) {
+async function fnUserDelete(id) {
   try {
     await prisma.user.delete({ where: { id: Number(id) } });
     return true;
@@ -85,3 +85,11 @@ export async function fnUserDelete(id) {
     throw new Error("User not found");
   }
 }
+
+module.exports = {
+  fnUserList,
+  fnUserGet,
+  fnUserCreate,
+  fnUserUpdate,
+  fnUserDelete,
+};

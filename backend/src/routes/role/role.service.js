@@ -1,6 +1,6 @@
-import { prisma } from "../../utils/prisma.util.js";
+const { prisma } = require('../../utils/prisma.util');
 
-export async function fnRoleList({ limit = 10, page = 1, search = "" }) {
+async function fnRoleList({ limit = 10, page = 1, search = "" }) {
   const safe_limit = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
   const safe_page = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
   const skip = (safe_page - 1) * safe_limit;
@@ -19,7 +19,7 @@ export async function fnRoleList({ limit = 10, page = 1, search = "" }) {
   return { limit: safe_limit, page: safe_page, total, roles };
 }
 
-export async function fnRoleGet(id) {
+async function fnRoleGet(id) {
   const role = await prisma.role.findUnique({
     where: { id: Number(id) },
     include: {
@@ -40,12 +40,12 @@ export async function fnRoleGet(id) {
   };
 }
 
-export async function fnRoleCreate(name, description) {
+async function fnRoleCreate(name, description) {
   const role = await prisma.role.create({ data: { name, description } });
   return await fnRoleGet(role.id);
 }
 
-export async function fnRoleUpdate(id, { name, description }) {
+async function fnRoleUpdate(id, { name, description }) {
   const data = {};
   if (name !== undefined) data.name = name;
   if (description !== undefined) data.description = description;
@@ -55,7 +55,7 @@ export async function fnRoleUpdate(id, { name, description }) {
   return await fnRoleGet(id);
 }
 
-export async function fnRoleDelete(id) {
+async function fnRoleDelete(id) {
   try {
     await prisma.role.delete({ where: { id: Number(id) } });
     return true;
@@ -64,14 +64,14 @@ export async function fnRoleDelete(id) {
   }
 }
 
-export async function fnRoleAssign(user_id, role_id) {
+async function fnRoleAssign(user_id, role_id) {
   await prisma.userRole.create({
     data: { user: { connect: { id: Number(user_id) } }, role: { connect: { id: Number(role_id) } } },
   });
   return true;
 }
 
-export async function fnRoleRemove(user_id, role_id) {
+async function fnRoleRemove(user_id, role_id) {
   const removed = await prisma.userRole.deleteMany({ where: { user_id: Number(user_id), role_id: Number(role_id) } });
   if (removed.count === 0) throw new Error("Role assignment not found");
 
@@ -82,3 +82,13 @@ export async function fnRoleRemove(user_id, role_id) {
   }
   return true;
 }
+
+module.exports = {
+  fnRoleList,
+  fnRoleGet,
+  fnRoleCreate,
+  fnRoleUpdate,
+  fnRoleDelete,
+  fnRoleAssign,
+  fnRoleRemove,
+};

@@ -1,6 +1,6 @@
-import { z } from "zod";
+const { z } = require('zod');
 
-export const schemaAuthSignUp = z.object({
+const schemaAuthSignUp = z.object({
   email: z.string().email("Invalid email format"),
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
@@ -14,24 +14,24 @@ export const schemaAuthSignUp = z.object({
     .regex(/[^A-Za-z0-9]/, "Password must contain special character"),
 });
 
-export const schemaAuthSignIn = z.object({
+const schemaAuthSignIn = z.object({
   email: z.string().email("Email is required"),
   password: z.string().min(1, "Password is required"),
 });
 
-export const schemaAuthGoogle = z.object({
+const schemaAuthGoogle = z.object({
   id_token: z.string().min(1, "Google ID token is required"),
 });
 
-export const schemaAuthRefresh = z.object({
+const schemaAuthRefresh = z.object({
   refresh_token: z.string().min(1, "Refresh token is required"),
 });
 
-export const schemaAuthForgot = z.object({
+const schemaAuthForgot = z.object({
   email: z.string().email("Invalid email format"),
 });
 
-export const schemaAuthReset = z.object({
+const schemaAuthReset = z.object({
   token: z.string().min(1, "Reset token is required"),
   password: z
     .string()
@@ -41,3 +41,12 @@ export const schemaAuthReset = z.object({
     .regex(/[0-9]/, "Password must contain number")
     .regex(/[^A-Za-z0-9]/, "Password must contain special character"),
 });
+
+module.exports = {
+  schemaAuthSignUp,
+  schemaAuthSignIn,
+  schemaAuthGoogle,
+  schemaAuthRefresh,
+  schemaAuthForgot,
+  schemaAuthReset,
+};
