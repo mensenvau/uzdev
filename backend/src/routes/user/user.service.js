@@ -1,5 +1,5 @@
 import { hashPassword } from "../../utils/password.util.js";
-import { prisma } from "../../utils/db.util.js";
+import { prisma } from "../../utils/prisma.util.js";
 
 export async function fnUserList({ limit = 10, page = 1, search = "" }) {
   const safe_limit = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;

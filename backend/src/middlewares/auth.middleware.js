@@ -1,6 +1,6 @@
 import { jwtVerifyAccess } from "../utils/jwt.util.js";
 import { sendUnauthorized } from "../utils/response.util.js";
-import { prisma } from "../utils/db.util.js";
+import { prisma } from "../utils/prisma.util.js";
 
 export async function authMiddleware(req, res, next) {
   try {

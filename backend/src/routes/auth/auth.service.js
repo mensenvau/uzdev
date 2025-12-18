@@ -1,6 +1,6 @@
 import { comparePassword, hashPassword } from "../../utils/password.util.js";
 import { jwtGenerateAccess, jwtGenerateRefresh, jwtVerifyRefresh, jwtGeneratePasswordReset, jwtVerifyPasswordReset } from "../../utils/jwt.util.js";
-import { prisma } from "../../utils/db.util.js";
+import { prisma } from "../../utils/prisma.util.js";
 import { sendPasswordResetEmail } from "../../utils/email.util.js";
 import { OAuth2Client } from "google-auth-library";
 
