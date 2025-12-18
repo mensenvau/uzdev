@@ -1,61 +1,89 @@
-import { jwtVerifyAccess } from "../utils/jwt.util.js";
-import { sendUnauthorized } from "../utils/response.util.js";
-import { prisma } from "../utils/prisma.util.js";
+/**
+ * Authentication Middleware
+ * Verifies JWT tokens and loads user data
+ */
 
-export async function authMiddleware(req, res, next) {
+const { verifyAccessToken } = require('../utils/jwt.util');
+const { sendUnauthorized } = require('../utils/response.util');
+const { query } = require('../utils/db');
+
+/**
+ * Required authentication middleware
+ * Requires valid JWT token in Authorization header
+ */
+async function authMiddleware(req, res, next) {
   try {
-    const auth_header = req.headers.authorization;
-    if (!auth_header || !auth_header.startsWith("Bearer ")) {
-      return sendUnauthorized(res, "No token provided");
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return sendUnauthorized(res, 'No token provided');
     }
 
-    const token = auth_header.substring(7);
-    const decoded = jwtVerifyAccess(token);
-    if (!decoded) {
-      return sendUnauthorized(res, "Invalid or expired token");
+    const token = authHeader.substring(7);
+
+    let decoded;
+    try {
+      decoded = verifyAccessToken(token);
+    } catch (error) {
+      return sendUnauthorized(res, 'Invalid or expired token');
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: Number(decoded.user_id) },
-      select: { id: true, email: true, username: true, first_name: true, last_name: true, phone: true },
-    });
+    // Get user from database
+    const users = await query(
+      'SELECT id, email, username, first_name, last_name, phone FROM system_users WHERE id = ?',
+      [decoded.user_id]
+    );
 
-    if (!user) {
-      return sendUnauthorized(res, "User not found");
+    if (!users || users.length === 0) {
+      return sendUnauthorized(res, 'User not found');
     }
 
-    req.user = user;
+    req.user = users[0];
     next();
   } catch (error) {
-    console.log(error);
-    return sendUnauthorized(res, "Authentication failed");
+    console.error('Auth middleware error:', error);
+    return sendUnauthorized(res, 'Authentication failed');
   }
 }
 
-export async function optionalAuthMiddleware(req, res, next) {
+/**
+ * Optional authentication middleware
+ * Loads user if token is provided, but doesn't require it
+ */
+async function optionalAuthMiddleware(req, res, next) {
   try {
-    const auth_header = req.headers.authorization;
-    if (!auth_header || !auth_header.startsWith("Bearer ")) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return next();
     }
 
-    const token = auth_header.substring(7);
-    const decoded = jwtVerifyAccess(token);
+    const token = authHeader.substring(7);
 
-    if (decoded) {
-      const user = await prisma.user.findUnique({
-        where: { id: Number(decoded.user_id) },
-        select: { id: true, email: true, username: true, first_name: true, last_name: true, phone: true },
-      });
-      if (user) req.user = user;
+    let decoded;
+    try {
+      decoded = verifyAccessToken(token);
+    } catch (error) {
+      return next(); // Invalid token, continue without user
     }
+
+    // Get user from database
+    const users = await query(
+      'SELECT id, email, username, first_name, last_name, phone FROM system_users WHERE id = ?',
+      [decoded.user_id]
+    );
+
+    if (users && users.length > 0) {
+      req.user = users[0];
+    }
+
     next();
   } catch (error) {
-    next();
+    next(); // Error loading user, continue without user
   }
 }
 
-export default {
+module.exports = {
   authMiddleware,
   optionalAuthMiddleware,
 };
