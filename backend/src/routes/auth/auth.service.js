@@ -1,6 +1,6 @@
 const { comparePassword, hashPassword } = require('../../utils/password.util');
 const { signAccessToken, signRefreshToken, verifyRefreshToken, signPasswordResetToken, verifyPasswordResetToken } = require('../../utils/jwt.util');
-const { prisma } = require('../../utils/prisma.util');
+const { query, transaction } = require('../../utils/db');
 const { sendPasswordResetEmail } = require('../../utils/email.util');
 const { OAuth2Client } = require('google-auth-library');
 
@@ -8,17 +8,37 @@ const google_client_id = process.env.GOOGLE_CLIENT_ID || "";
 const google_client = google_client_id ? new OAuth2Client(google_client_id) : null;
 
 async function getUserWithRoles(user_id) {
-  const user = await prisma.user.findUnique({
-    where: { id: Number(user_id) },
-    include: {
-      default_role: true,
-      roles: { include: { role: true } },
-      groups: { include: { group: true } },
-    },
-  });
-  if (!user) return null;
+  const users = await query('SELECT * FROM system_users WHERE id = ?', [Number(user_id)]);
+  if (!users || users.length === 0) return null;
 
-  const role_list = user.roles.map((user_role) => user_role.role);
+  const user = users[0];
+
+  // Get default role
+  let default_role = null;
+  if (user.default_role_id) {
+    const defaultRoles = await query('SELECT * FROM system_roles WHERE id = ?', [user.default_role_id]);
+    default_role = defaultRoles[0] || null;
+  }
+
+  // Get all roles
+  const roles = await query(
+    `SELECT r.*
+     FROM system_roles r
+     INNER JOIN system_user_roles ur ON ur.role_id = r.id
+     WHERE ur.user_id = ?`,
+    [Number(user_id)]
+  );
+
+  // Get all groups
+  const groups = await query(
+    `SELECT g.*
+     FROM system_groups g
+     INNER JOIN system_group_users gu ON gu.group_id = g.id
+     WHERE gu.user_id = ?`,
+    [Number(user_id)]
+  );
+
+  const role_list = roles;
   const role_lookup = new Map(role_list.map((role) => [role.id, role.name]));
   const default_role_name = user.default_role_id ? role_lookup.get(user.default_role_id) : undefined;
   const active_role = default_role_name || role_list[0]?.name || "user";
@@ -31,43 +51,49 @@ async function getUserWithRoles(user_id) {
     last_name: user.last_name,
     phone: user.phone,
     default_role_id: user.default_role_id || null,
-    default_role: user.default_role || null,
+    default_role: default_role || null,
     role: active_role,
     roles: role_list,
-    groups: user.groups.map((group_link) => group_link.group),
+    groups: groups,
   };
 }
 
-export async function fnAuthSignUp(email, first_name, last_name, phone, password) {
-  const existing_user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
-  if (existing_user) throw new Error("Email already exists");
+async function fnAuthSignUp(email, first_name, last_name, phone, password) {
+  // Check if user exists
+  const existing = await query('SELECT id FROM system_users WHERE email = ?', [email]);
+  if (existing.length > 0) throw new Error("Email already exists");
 
   const hashed_password = await hashPassword(password);
-  const role_user = await prisma.role.findUnique({ where: { name: "user" } });
 
-  const created_user = await prisma.$transaction(async (tx) => {
-    return tx.user.create({
-      data: {
-        email,
-        username: email,
-        first_name,
-        last_name,
-        phone,
-        password: hashed_password,
-        default_role_id: role_user?.id ?? null,
-        roles: role_user
-          ? {
-              create: [{ role: { connect: { id: role_user.id } } }],
-            }
-          : undefined,
-      },
-    });
+  // Get "user" role
+  const roleResults = await query('SELECT id FROM system_roles WHERE name = ?', ['user']);
+  const role_user_id = roleResults[0]?.id || null;
+
+  // Create user with transaction
+  const created_user_id = await transaction(async (conn) => {
+    // Insert user
+    const [userResult] = await conn.execute(
+      'INSERT INTO system_users (email, username, first_name, last_name, phone, password, default_role_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [email, email, first_name, last_name, phone, hashed_password, role_user_id]
+    );
+
+    const user_id = userResult.insertId;
+
+    // Assign role if exists
+    if (role_user_id) {
+      await conn.execute(
+        'INSERT INTO system_user_roles (user_id, role_id) VALUES (?, ?)',
+        [user_id, role_user_id]
+      );
+    }
+
+    return user_id;
   });
 
-  const hydrated_user = await getUserWithRoles(created_user.id);
+  const hydrated_user = await getUserWithRoles(created_user_id);
 
   const token_payload = {
-    user_id: created_user.id,
+    user_id: created_user_id,
     email: hydrated_user?.email || email,
     first_name: hydrated_user?.first_name || first_name,
     last_name: hydrated_user?.last_name || last_name,
@@ -75,18 +101,22 @@ export async function fnAuthSignUp(email, first_name, last_name, phone, password
 
   return {
     access_token: signAccessToken(token_payload),
-    refresh_token: signRefreshToken({ user_id: created_user.id }),
+    refresh_token: signRefreshToken({ user_id: created_user_id }),
     user: hydrated_user,
   };
 }
 
 async function fnAuthSignIn(email, password) {
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true, email: true, username: true, first_name: true, last_name: true, phone: true, password: true },
-  });
-  if (!user?.password) throw new Error("Invalid credentials");
+  const users = await query(
+    'SELECT id, email, username, first_name, last_name, phone, password FROM system_users WHERE email = ?',
+    [email]
+  );
 
+  if (!users || users.length === 0 || !users[0].password) {
+    throw new Error("Invalid credentials");
+  }
+
+  const user = users[0];
   const valid = await comparePassword(password, user.password);
   if (!valid) throw new Error("Invalid credentials");
 
@@ -122,38 +152,50 @@ async function fnAuthSignInWithGoogle(id_token) {
   const first_name = payload.given_name || "";
   const last_name = payload.family_name || "";
 
-  let user = await prisma.user.findFirst({
-    where: { OR: [{ google_id }, { email }] },
-    select: { id: true },
-  });
+  // Find user by google_id or email
+  let users = await query(
+    'SELECT id FROM system_users WHERE google_id = ? OR email = ?',
+    [google_id, email]
+  );
 
-  if (!user) {
-    const role_user = await prisma.role.findUnique({ where: { name: "user" } });
-    user = await prisma.$transaction(async (tx) => {
-      return tx.user.create({
-        data: {
-          email,
-          username: email,
-          first_name,
-          last_name,
-          google_id,
-          default_role_id: role_user?.id ?? null,
-          roles: role_user ? { create: [{ role: { connect: { id: role_user.id } } }] } : undefined,
-        },
-      });
+  let user_id;
+
+  if (users.length === 0) {
+    // Create new user
+    const roleResults = await query('SELECT id FROM system_roles WHERE name = ?', ['user']);
+    const role_user_id = roleResults[0]?.id || null;
+
+    user_id = await transaction(async (conn) => {
+      const [userResult] = await conn.execute(
+        'INSERT INTO system_users (email, username, first_name, last_name, google_id, default_role_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [email, email, first_name, last_name, google_id, role_user_id]
+      );
+
+      const new_user_id = userResult.insertId;
+
+      if (role_user_id) {
+        await conn.execute(
+          'INSERT INTO system_user_roles (user_id, role_id) VALUES (?, ?)',
+          [new_user_id, role_user_id]
+        );
+      }
+
+      return new_user_id;
     });
+  } else {
+    user_id = users[0].id;
   }
 
-  const hydrated_user = await getUserWithRoles(user.id);
+  const hydrated_user = await getUserWithRoles(user_id);
 
   return {
     access_token: signAccessToken({
-      user_id: user.id,
+      user_id: user_id,
       email: hydrated_user?.email || email,
       first_name: hydrated_user?.first_name || first_name,
       last_name: hydrated_user?.last_name || last_name,
     }),
-    refresh_token: signRefreshToken({ user_id: user.id }),
+    refresh_token: signRefreshToken({ user_id: user_id }),
     user: hydrated_user,
   };
 }
@@ -162,19 +204,20 @@ async function fnAuthRefreshToken(refresh_token) {
   const decoded = verifyRefreshToken(refresh_token);
   if (!decoded) throw new Error("Invalid refresh token");
 
-  const user = await prisma.user.findUnique({ where: { id: Number(decoded.user_id) }, select: { id: true } });
-  if (!user) throw new Error("User not found");
+  const users = await query('SELECT id FROM system_users WHERE id = ?', [Number(decoded.user_id)]);
+  if (users.length === 0) throw new Error("User not found");
 
   return {
-    access_token: signAccessToken({ user_id: user.id }),
-    refresh_token: signRefreshToken({ user_id: user.id }),
+    access_token: signAccessToken({ user_id: users[0].id }),
+    refresh_token: signRefreshToken({ user_id: users[0].id }),
   };
 }
 
 async function fnAuthForgotPassword(email) {
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
-  if (!user) return;
-  const token = signPasswordResetToken(user.id);
+  const users = await query('SELECT id FROM system_users WHERE email = ?', [email]);
+  if (users.length === 0) return;
+
+  const token = signPasswordResetToken(users[0].id);
   const frontend_url = process.env.FRONTEND_URL || "http://localhost:3000";
   const reset_url = `${frontend_url}/auth/reset?token=${token}`;
   await sendPasswordResetEmail(email, reset_url);
@@ -183,8 +226,9 @@ async function fnAuthForgotPassword(email) {
 async function fnAuthResetPassword(token, new_password) {
   const decoded = verifyPasswordResetToken(token);
   if (!decoded?.user_id) throw new Error("Invalid or expired reset token");
+
   const hashed = await hashPassword(new_password);
-  await prisma.user.update({ where: { id: Number(decoded.user_id) }, data: { password: hashed } });
+  await query('UPDATE system_users SET password = ? WHERE id = ?', [hashed, Number(decoded.user_id)]);
 }
 
 module.exports = {
