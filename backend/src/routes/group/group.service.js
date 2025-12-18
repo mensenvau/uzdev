@@ -1,6 +1,6 @@
-import { prisma } from "../../utils/prisma.util.js";
+const { prisma } = require('../../utils/prisma.util');
 
-export async function fnGroupList({ limit = 10, page = 1, search = "" }) {
+async function fnGroupList({ limit = 10, page = 1, search = "" }) {
   const safe_limit = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
   const safe_page = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
   const skip = (safe_page - 1) * safe_limit;
@@ -17,7 +17,7 @@ export async function fnGroupList({ limit = 10, page = 1, search = "" }) {
   return { limit: safe_limit, page: safe_page, total, groups };
 }
 
-export async function fnGroupGet(id) {
+async function fnGroupGet(id) {
   const group = await prisma.group.findUnique({
     where: { id: Number(id) },
     include: { users: { include: { user: true } } },
@@ -28,12 +28,12 @@ export async function fnGroupGet(id) {
   return { ...group, users: group.users.map((gu) => gu.user) };
 }
 
-export async function fnGroupCreate(name, description) {
+async function fnGroupCreate(name, description) {
   const group = await prisma.group.create({ data: { name, description } });
   return await fnGroupGet(group.id);
 }
 
-export async function fnGroupUpdate(id, { name, description }) {
+async function fnGroupUpdate(id, { name, description }) {
   const data = {};
   if (name !== undefined) data.name = name;
   if (description !== undefined) data.description = description;
@@ -43,19 +43,29 @@ export async function fnGroupUpdate(id, { name, description }) {
   return await fnGroupGet(id);
 }
 
-export async function fnGroupDelete(id) {
+async function fnGroupDelete(id) {
   const result = await prisma.group.delete({ where: { id: Number(id) } }).catch(() => null);
   if (!result) throw new Error("Group not found");
   return true;
 }
 
-export async function fnGroupAssign(group_id, user_id) {
+async function fnGroupAssign(group_id, user_id) {
   await prisma.groupUser.create({ data: { group_id: Number(group_id), user_id: Number(user_id) } });
   return true;
 }
 
-export async function fnGroupRemove(group_id, user_id) {
+async function fnGroupRemove(group_id, user_id) {
   const removed = await prisma.groupUser.deleteMany({ where: { group_id: Number(group_id), user_id: Number(user_id) } });
   if (removed.count === 0) throw new Error("User not in group");
   return true;
 }
+
+module.exports = {
+  fnGroupList,
+  fnGroupGet,
+  fnGroupCreate,
+  fnGroupUpdate,
+  fnGroupDelete,
+  fnGroupAssign,
+  fnGroupRemove,
+};

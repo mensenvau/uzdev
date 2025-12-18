@@ -1,4 +1,4 @@
-import { prisma } from "../../utils/prisma.util.js";
+const { prisma } = require('../../utils/prisma.util');
 
 const OPTION_FIELD_TYPES = ["select", "checkbox", "radio", "score"];
 const TABLE_FIELD_TYPE = "table_select";
@@ -116,7 +116,7 @@ async function fnFormUpsertFields(form_id, fields = [], client) {
   });
 }
 
-export async function fnFormList({ limit = 10, page = 1, search = "" }) {
+async function fnFormList({ limit = 10, page = 1, search = "" }) {
   const safe_limit = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
   const safe_page = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
   const skip = (safe_page - 1) * safe_limit;
@@ -153,7 +153,7 @@ export async function fnFormList({ limit = 10, page = 1, search = "" }) {
   };
 }
 
-export async function fnFormGet(id, client = prisma) {
+async function fnFormGet(id, client = prisma) {
   const form = await client.form.findUnique({
     where: { id: Number(id) },
     include: {
@@ -184,7 +184,7 @@ export async function fnFormGet(id, client = prisma) {
   };
 }
 
-export async function fnFormCreate(name, description, created_by, fields = []) {
+async function fnFormCreate(name, description, created_by, fields = []) {
   return prisma.$transaction(async (tx) => {
     const created = await tx.form.create({
       data: { name, description, created_by },
@@ -196,7 +196,7 @@ export async function fnFormCreate(name, description, created_by, fields = []) {
   });
 }
 
-export async function fnFormUpdate(id, { name, description, is_active, fields }) {
+async function fnFormUpdate(id, { name, description, is_active, fields }) {
   return prisma.$transaction(async (tx) => {
     const existing = await tx.form.findUnique({ where: { id: Number(id) } });
     if (!existing) throw new Error("Form not found");
@@ -220,20 +220,20 @@ export async function fnFormUpdate(id, { name, description, is_active, fields })
   });
 }
 
-export async function fnFormDelete(id) {
+async function fnFormDelete(id) {
   const deleted = await prisma.form.delete({ where: { id: Number(id) } }).catch(() => null);
   if (!deleted) throw new Error("Form not found");
   return true;
 }
 
-export async function fnFormAddAccess(form_id, access_type, access_value, expires_at) {
+async function fnFormAddAccess(form_id, access_type, access_value, expires_at) {
   const access = await prisma.formAccess.create({
     data: { form_id: Number(form_id), access_type, access_value, expires_at: expires_at || null },
   });
   return access;
 }
 
-export async function fnFormSubmit(form_id, user_id, answers) {
+async function fnFormSubmit(form_id, user_id, answers) {
   const form = await prisma.form.findUnique({ where: { id: Number(form_id) } });
   if (!form || form.is_active === false) throw new Error("Form not found or inactive");
 
@@ -314,14 +314,14 @@ export async function fnFormSubmit(form_id, user_id, answers) {
   });
 }
 
-export async function fnFormResponses(form_id) {
+async function fnFormResponses(form_id) {
   return prisma.formResponse.findMany({
     where: { form_id: Number(form_id) },
     orderBy: { created_at: "desc" },
   });
 }
 
-export async function fnFormListTables(prefix = "system_") {
+async function fnFormListTables(prefix = "system_") {
   const likePattern = `${prefix}%`;
   return prisma.$queryRawUnsafe(
     `SELECT TABLE_NAME as name, TABLE_TYPE as type
@@ -334,7 +334,7 @@ export async function fnFormListTables(prefix = "system_") {
   );
 }
 
-export async function fnFormListTableColumns(table_name, prefix = "system_") {
+async function fnFormListTableColumns(table_name, prefix = "system_") {
   if (!table_name || !table_name.startsWith(prefix)) {
     throw new Error("Invalid table name");
   }
@@ -348,3 +348,16 @@ export async function fnFormListTableColumns(table_name, prefix = "system_") {
     table_name
   );
 }
+
+module.exports = {
+  fnFormList,
+  fnFormGet,
+  fnFormCreate,
+  fnFormUpdate,
+  fnFormDelete,
+  fnFormAddAccess,
+  fnFormSubmit,
+  fnFormResponses,
+  fnFormListTables,
+  fnFormListTableColumns,
+};

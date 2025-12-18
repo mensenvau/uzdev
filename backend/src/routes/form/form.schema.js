@@ -1,4 +1,4 @@
-import { z } from "zod";
+const { z } = require('zod');
 
 const fieldOptionSchema = z.object({
   id: z.number().int().positive().optional(),
@@ -27,20 +27,20 @@ const fieldSchema = z.object({
   table_source: fieldTableSourceSchema.optional(),
 });
 
-export const schemaFormCreate = z.object({
+const schemaFormCreate = z.object({
   description: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   fields: z.array(fieldSchema).optional(),
 });
 
-export const schemaFormUpdate = z.object({
+const schemaFormUpdate = z.object({
   description: z.string().optional(),
   is_active: z.boolean().optional(),
   name: z.string().min(1, "Name is required").optional(),
   fields: z.array(fieldSchema).optional(),
 });
 
-export const schemaFormAccess = z.object({
+const schemaFormAccess = z.object({
   access_type: z.enum(["group", "link", "role"], { message: "Invalid access type" }),
   access_value: z.string().min(1, "Access value is required"),
   expires_at: z.string().datetime().optional(),
@@ -48,7 +48,7 @@ export const schemaFormAccess = z.object({
 
 const answerValueSchema = z.union([z.string(), z.number(), z.boolean(), z.array(z.union([z.string(), z.number(), z.boolean()]))]);
 
-export const schemaFormSubmit = z.object({
+const schemaFormSubmit = z.object({
   answers: z.array(
     z.object({
       field_id: z.number().int("Field ID must be integer"),
@@ -57,3 +57,10 @@ export const schemaFormSubmit = z.object({
   ),
   token: z.string().optional(),
 });
+
+module.exports = {
+  schemaFormCreate,
+  schemaFormUpdate,
+  schemaFormAccess,
+  schemaFormSubmit,
+};
