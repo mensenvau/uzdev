@@ -1,14 +1,14 @@
-import express from "express";
-import helmet from "helmet";
-import morgan from "morgan";
-import cors from "cors";
+const express = require('express');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const cors = require('cors');
 
-import authRouter from "./routes/auth/auth.router.js";
-import formRouter from "./routes/form/form.router.js";
-import groupRouter from "./routes/group/group.router.js";
-import policyRouter from "./routes/policy/policy.router.js";
-import roleRouter from "./routes/role/role.router.js";
-import userRouter from "./routes/user/user.router.js";
+const authRouter = require('./routes/auth/auth.router');
+const formRouter = require('./routes/form/form.router');
+const groupRouter = require('./routes/group/group.router');
+const policyRouter = require('./routes/policy/policy.router');
+const roleRouter = require('./routes/role/role.router');
+const userRouter = require('./routes/user/user.router');
 
 const app = express();
 
@@ -45,4 +45,4 @@ app.use((req, res) => {
   });
 });
 
-export default app;
+module.exports = app;
