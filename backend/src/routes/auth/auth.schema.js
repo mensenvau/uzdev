@@ -1,4 +1,4 @@
-const { z } = require('zod');
+const { z } = require("zod");
 
 const schemaAuthSignUp = z.object({
   email: z.string().email("Invalid email format"),

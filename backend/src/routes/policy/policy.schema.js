@@ -1,4 +1,4 @@
-const { z } = require('zod');
+const { z } = require("zod");
 
 const schemaPolicyCreate = z.object({
   description: z.string().optional(),

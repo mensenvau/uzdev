@@ -28,6 +28,21 @@ export function ManageUserPage() {
     []
   );
 
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && tabs.some((t) => t.key === tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, [searchParams, tabs]);
+
+  const handleTabChange = (tabKey: "general" | "roles" | "groups") => {
+    setActiveTab(tabKey);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tabKey);
+    if (userId) params.set("id", userId);
+    window.history.replaceState(null, "", `/users/manage?${params.toString()}`);
+  };
+
   // Fetch user once for all tabs
   useEffect(() => {
     const load = async () => {
@@ -66,7 +81,7 @@ export function ManageUserPage() {
           <Tabs>
             <TabsList className="bg-muted">
               {tabs.map((tab) => (
-                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => setActiveTab(tab.key as any)}>
+                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => handleTabChange(tab.key as any)}>
                   {tab.label}
                 </TabsTrigger>
               ))}

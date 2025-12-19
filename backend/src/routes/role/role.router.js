@@ -1,9 +1,9 @@
-const express = require('express');
-const { authMiddleware } = require('../../middlewares/auth.middleware');
-const { policyMiddleware } = require('../../middlewares/policy.middleware');
-const { validateBody } = require('../../middlewares/validate.middleware');
-const { schemaRoleAssign, schemaRoleCreate, schemaRoleUpdate } = require('./role.schema');
-const { roleAssign, roleCreate, roleDelete, roleGet, roleList, roleRemove, roleUpdate } = require('./role.controller');
+const express = require("express");
+const { authMiddleware } = require("../../middlewares/auth.middleware");
+const { policyMiddleware } = require("../../middlewares/policy.middleware");
+const { validateBody } = require("../../middlewares/validate.middleware");
+const { schemaRoleAssign, schemaRoleCreate, schemaRoleUpdate } = require("./role.schema");
+const { roleAssign, roleCreate, roleDelete, roleGet, roleList, roleRemove, roleUpdate } = require("./role.controller");
 
 const router = express.Router();
 

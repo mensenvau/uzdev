@@ -1,6 +1,6 @@
-const { asyncHandler } = require('../../utils/async.util');
-const { sendError, sendSuccess } = require('../../utils/response.util');
-const { fnUserCreate, fnUserDelete, fnUserGet, fnUserList, fnUserUpdate } = require('./user.service');
+const { asyncHandler } = require("../../utils/async.util");
+const { sendError, sendSuccess } = require("../../utils/response.util");
+const { fnUserCreate, fnUserDelete, fnUserGet, fnUserList, fnUserUpdate } = require("./user.service");
 
 const userCreate = asyncHandler(async (req, res) => {
   const { email, password, first_name, last_name, phone } = req.body;

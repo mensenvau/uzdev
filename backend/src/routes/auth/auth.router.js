@@ -1,9 +1,9 @@
-const express = require('express');
-const { authMiddleware } = require('../../middlewares/auth.middleware');
-const { policyMiddleware } = require('../../middlewares/policy.middleware');
-const { validateBody } = require('../../middlewares/validate.middleware');
-const { schemaAuthGoogle, schemaAuthRefresh, schemaAuthSignIn, schemaAuthSignUp, schemaAuthForgot, schemaAuthReset } = require('./auth.schema');
-const { authForgot, authGetMe, authRefreshToken, authResetPassword, authSignIn, authSignInWithGoogle, authSignUp } = require('./auth.controller');
+const express = require("express");
+const { authMiddleware } = require("../../middlewares/auth.middleware");
+const { policyMiddleware } = require("../../middlewares/policy.middleware");
+const { validateBody } = require("../../middlewares/validate.middleware");
+const { schemaAuthGoogle, schemaAuthRefresh, schemaAuthSignIn, schemaAuthSignUp, schemaAuthForgot, schemaAuthReset } = require("./auth.schema");
+const { authForgot, authGetMe, authRefreshToken, authResetPassword, authSignIn, authSignInWithGoogle, authSignUp } = require("./auth.controller");
 
 const router = express.Router();
 

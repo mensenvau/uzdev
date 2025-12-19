@@ -1,0 +1,2 @@
+-- PUBLIC MODULE SEED
+-- No seed data by default

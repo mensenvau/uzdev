@@ -5,9 +5,9 @@
 
 const formatApiError = (error) => {
   if (error?.errors && Array.isArray(error.errors)) {
-    return error.errors.map((err) => err.message).join(', ');
+    return error.errors.map((err) => err.message).join(", ");
   }
-  return error.message || 'Unknown error';
+  return error.message || "Unknown error";
 };
 
 module.exports = { formatApiError };

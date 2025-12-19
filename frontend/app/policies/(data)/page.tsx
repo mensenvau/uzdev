@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { useAuthGuard } from "@/lib/use-auth-guard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { useAuthGuard } from "@/lib/use-auth-guard";
 import { toast } from "sonner";
 import api from "@/lib/api";
 

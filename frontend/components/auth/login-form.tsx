@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { setAccessToken, setRefreshToken, setUserInfo } from "@/lib/auth";
-import { toast } from "sonner";
-import api from "@/lib/api";
 import { formatApiError } from "@/lib/format-api-error";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import Link from "next/link";
+import api from "@/lib/api";
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -128,13 +128,7 @@ export function LoginForm() {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-2"
-            onClick={handleGoogle}
-            disabled={loading || !googleReady}
-          >
+          <Button type="button" variant="secondary" className="w-full bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 flex items-center justify-center gap-2" onClick={handleGoogle} disabled={loading || !googleReady}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-4 w-4">
               <path fill="#EA4335" d="M24 9.5c3.54 0 6 1.54 7.38 2.83l5.4-5.26C33.64 3.8 29.3 1.5 24 1.5 14.98 1.5 7.4 6.98 4.34 14.26l6.6 5.12C12.57 13.12 17.74 9.5 24 9.5z" />
               <path fill="#4285F4" d="M46.5 24.5c0-1.57-.14-3.08-.4-4.5H24v9h12.7c-.55 2.84-2.23 5.24-4.73 6.84l7.23 5.61C43.88 37.2 46.5 31.4 46.5 24.5z" />

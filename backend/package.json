@@ -6,11 +6,11 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "db:bootstrap": "npm run db:init && npm run db:seed",
     "db:init": "node database/scripts/init.js",
     "db:seed": "node database/scripts/seed.js",
     "db:reset": "node database/scripts/reset.js",
-    "db:module:create": "node database/scripts/create-module.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:module:create": "node database/scripts/create-module.js"
   },
   "keywords": [
     "express",

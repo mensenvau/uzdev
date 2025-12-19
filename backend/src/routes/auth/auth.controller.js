@@ -1,7 +1,14 @@
 const { asyncHandler } = require('../../utils/async.util');
 const { sendSuccess } = require('../../utils/response.util');
 const { fnUserGet } = require('../user/user.service');
-const { fnAuthForgotPassword, fnAuthRefreshToken, fnAuthResetPassword, fnAuthSignIn, fnAuthSignInWithGoogle, fnAuthSignUp } = require('./auth.service');
+const {
+  fnAuthForgotPassword,
+  fnAuthRefreshToken,
+  fnAuthResetPassword,
+  fnAuthSignIn,
+  fnAuthSignInWithGoogle,
+  fnAuthSignUp,
+} = require('./auth.service');
 
 const authGetMe = asyncHandler(async (req, res) => {
   const user = await fnUserGet(req.user.id);

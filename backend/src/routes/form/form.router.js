@@ -1,14 +1,14 @@
-const express = require('express');
-const { authMiddleware } = require('../../middlewares/auth.middleware');
-const { policyMiddleware } = require('../../middlewares/policy.middleware');
-const { validateBody } = require('../../middlewares/validate.middleware');
-const { schemaFormAccess, schemaFormCreate, schemaFormSubmit, schemaFormUpdate } = require('./form.schema');
-const { formAddAccess, formCreate, formDelete, formGet, formList, formResponses, formSubmit, formTables, formTableColumns, formUpdate } = require('./form.controller');
+const express = require("express");
+const { authMiddleware } = require("../../middlewares/auth.middleware");
+const { policyMiddleware } = require("../../middlewares/policy.middleware");
+const { validateBody } = require("../../middlewares/validate.middleware");
+const { schemaFormAccess, schemaFormCreate, schemaFormSubmit, schemaFormUpdate } = require("./form.schema");
+const { formAddAccess, formColumns, formColumnValues, formCreate, formDelete, formGet, formList, formResponses, formSubmit, formUpdate } = require("./form.controller");
 
 const router = express.Router();
 
-router.get("/meta/tables", authMiddleware, policyMiddleware("form.list"), formTables);
-router.get("/meta/tables/:name/columns", authMiddleware, policyMiddleware("form.list"), formTableColumns);
+router.get("/meta/columns", authMiddleware, policyMiddleware("form.list"), formColumns);
+router.get("/meta/column-values", authMiddleware, policyMiddleware("form.list"), formColumnValues);
 router.get("/", authMiddleware, policyMiddleware("form.list"), formList);
 router.get("/:id", authMiddleware, policyMiddleware("form.get"), formGet);
 router.get("/:id/responses", authMiddleware, policyMiddleware("form.view_responses"), formResponses);

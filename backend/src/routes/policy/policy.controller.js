@@ -1,6 +1,6 @@
-const { asyncHandler } = require('../../utils/async.util');
-const { sendSuccess } = require('../../utils/response.util');
-const { fnPolicyAssign, fnPolicyCreate, fnPolicyDelete, fnPolicyGet, fnPolicyList, fnPolicyRemove, fnPolicyUpdate } = require('./policy.service');
+const { asyncHandler } = require("../../utils/async.util");
+const { sendSuccess } = require("../../utils/response.util");
+const { fnPolicyAssign, fnPolicyCreate, fnPolicyDelete, fnPolicyGet, fnPolicyList, fnPolicyRemove, fnPolicyUpdate } = require("./policy.service");
 
 const policyAssign = asyncHandler(async (req, res) => {
   const { policy_id, role_id } = req.body;

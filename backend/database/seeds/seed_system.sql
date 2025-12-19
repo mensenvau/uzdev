@@ -129,7 +129,7 @@ ON DUPLICATE KEY UPDATE `description` = VALUES(`description`);
 -- ============================================================================
 -- SUPER ADMIN USER
 -- ============================================================================
--- Password: Admin@123
+-- Password: @Aa12345!
 -- Bcrypt hash with salt rounds = 10
 INSERT INTO `system_users` (
   `email`,
@@ -145,7 +145,7 @@ INSERT INTO `system_users` (
   'Super',
   'Admin',
   '+998900000001',
-  '$2b$10$rQ8xhKZQw5aJz5h3xvJqOuGqYq5YqYvZCqK5YqYvZCqK5YqYvZCqK',
+  '$2b$10$oarymf3lRpSHqcL/WOaN5uNiJnLT6YZYIa2GmJ/LBs/d7rYPU9YpC',
   @role_super_id
 )
 ON DUPLICATE KEY UPDATE

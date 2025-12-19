@@ -1,6 +1,6 @@
-const { asyncHandler } = require('../../utils/async.util');
-const { sendSuccess } = require('../../utils/response.util');
-const { fnRoleAssign, fnRoleCreate, fnRoleDelete, fnRoleGet, fnRoleList, fnRoleRemove, fnRoleUpdate } = require('./role.service');
+const { asyncHandler } = require("../../utils/async.util");
+const { sendSuccess } = require("../../utils/response.util");
+const { fnRoleAssign, fnRoleCreate, fnRoleDelete, fnRoleGet, fnRoleList, fnRoleRemove, fnRoleUpdate } = require("./role.service");
 
 const roleAssign = asyncHandler(async (req, res) => {
   const { role_id, user_id } = req.body;

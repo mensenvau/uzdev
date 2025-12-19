@@ -1,7 +1,7 @@
-const { asyncHandler } = require('../../utils/async.util');
-const { sendSuccess } = require('../../utils/response.util');
-const { formatApiError } = require('../../utils/error.util');
-const { fnGroupAssign, fnGroupCreate, fnGroupDelete, fnGroupGet, fnGroupList, fnGroupRemove, fnGroupUpdate } = require('./group.service');
+const { asyncHandler } = require("../../utils/async.util");
+const { sendSuccess } = require("../../utils/response.util");
+const { formatApiError } = require("../../utils/error.util");
+const { fnGroupAssign, fnGroupCreate, fnGroupDelete, fnGroupGet, fnGroupList, fnGroupRemove, fnGroupUpdate } = require("./group.service");
 
 const groupAssign = asyncHandler(async (req, res) => {
   const { group_id, user_id } = req.body;

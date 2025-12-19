@@ -1,9 +1,9 @@
-const express = require('express');
-const { authMiddleware } = require('../../middlewares/auth.middleware');
-const { policyMiddleware } = require('../../middlewares/policy.middleware');
-const { validateBody } = require('../../middlewares/validate.middleware');
-const { schemaGroupCreate, schemaGroupUpdate, schemaGroupUser } = require('./group.schema');
-const { groupAssign, groupCreate, groupDelete, groupGet, groupList, groupRemove, groupUpdate } = require('./group.controller');
+const express = require("express");
+const { authMiddleware } = require("../../middlewares/auth.middleware");
+const { policyMiddleware } = require("../../middlewares/policy.middleware");
+const { validateBody } = require("../../middlewares/validate.middleware");
+const { schemaGroupCreate, schemaGroupUpdate, schemaGroupUser } = require("./group.schema");
+const { groupAssign, groupCreate, groupDelete, groupGet, groupList, groupRemove, groupUpdate } = require("./group.controller");
 
 const router = express.Router();
 

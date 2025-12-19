@@ -1,17 +1,3 @@
-/**
- * Module Creator Script
- *
- * Creates a new module with SQL migration and seed templates.
- * Follows the naming convention: <prefix>_* for all tables.
- *
- * Usage:
- *   npm run db:module:create
- *
- * Interactive prompts will ask for:
- * - Module name (e.g., "dss", "hr", "inventory")
- * - Module description
- */
-
 const fs = require('fs').promises;
 const path = require('path');
 const readline = require('readline');

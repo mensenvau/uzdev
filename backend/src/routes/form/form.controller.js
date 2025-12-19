@@ -1,17 +1,6 @@
-const { asyncHandler } = require('../../utils/async.util');
-const { sendSuccess } = require('../../utils/response.util');
-const {
-  fnFormAddAccess,
-  fnFormCreate,
-  fnFormDelete,
-  fnFormGet,
-  fnFormList,
-  fnFormListTableColumns,
-  fnFormListTables,
-  fnFormResponses,
-  fnFormSubmit,
-  fnFormUpdate,
-} = require('./form.service');
+const { asyncHandler } = require("../../utils/async.util");
+const { sendSuccess } = require("../../utils/response.util");
+const { fnFormAddAccess, fnFormCreate, fnFormDelete, fnFormGet, fnFormList, fnFormResponses, fnFormSearchColumns, fnFormSubmit, fnFormUpdate, fnFormColumnValues } = require("./form.service");
 
 const formAddAccess = asyncHandler(async (req, res) => {
   const { access_type, access_value, expires_at } = req.body;
@@ -61,17 +50,16 @@ const formResponses = asyncHandler(async (req, res) => {
   sendSuccess(res, { responses });
 });
 
-const formTables = asyncHandler(async (req, res) => {
-  const { prefix } = req.query;
-  const tables = await fnFormListTables(prefix || "system_");
-  sendSuccess(res, { tables });
+const formColumns = asyncHandler(async (req, res) => {
+  const { q } = req.query;
+  const columns = await fnFormSearchColumns(q || "");
+  sendSuccess(res, { columns });
 });
 
-const formTableColumns = asyncHandler(async (req, res) => {
-  const { name } = req.params;
-  const { prefix } = req.query;
-  const columns = await fnFormListTableColumns(name, prefix || "system_");
-  sendSuccess(res, { columns });
+const formColumnValues = asyncHandler(async (req, res) => {
+  const { table, value_column, label_column } = req.query;
+  const rows = await fnFormColumnValues(table, value_column, label_column);
+  sendSuccess(res, { rows });
 });
 
 module.exports = {
@@ -83,6 +71,6 @@ module.exports = {
   formSubmit,
   formUpdate,
   formResponses,
-  formTables,
-  formTableColumns,
+  formColumns,
+  formColumnValues,
 };

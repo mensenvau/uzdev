@@ -22,7 +22,6 @@ export const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { label: "Groups", href: "/groups", icon: UserPlus2 },
     { label: "Roles", href: "/roles", icon: ShieldCheck },
     { label: "Policies", href: "/policies", icon: ShieldHalf },
-    { label: "Form Builder", href: "/forms/builder", icon: PanelsTopLeft },
   ],
   admin: [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -31,13 +30,11 @@ export const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { label: "Groups", href: "/groups", icon: UserPlus2 },
     { label: "Roles", href: "/roles", icon: ShieldCheck },
     { label: "Policies", href: "/policies", icon: ShieldHalf },
-    { label: "Form Builder", href: "/forms/builder", icon: PanelsTopLeft },
   ],
   manager: [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Forms", href: "/forms", icon: ClipboardList },
     { label: "Groups", href: "/groups", icon: UserPlus2 },
-    { label: "Form Builder", href: "/forms/builder", icon: PanelsTopLeft },
   ],
   user: [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },

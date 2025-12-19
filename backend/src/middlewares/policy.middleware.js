@@ -4,7 +4,7 @@
  */
 
 const { sendForbidden } = require('../utils/response.util');
-const { query } = require('../utils/db');
+const { queryMany } = require('../utils/db');
 
 /**
  * Check if user has a specific policy
@@ -23,7 +23,7 @@ async function userHasPolicy(userId, policyName) {
     LIMIT 1
   `;
 
-  const results = await query(sql, [userId, policyName]);
+  const results = await queryMany(sql, [userId, policyName]);
   return results.length > 0;
 }
 

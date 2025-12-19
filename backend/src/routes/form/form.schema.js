@@ -1,4 +1,4 @@
-const { z } = require('zod');
+const { z } = require("zod");
 
 const fieldOptionSchema = z.object({
   id: z.number().int().positive().optional(),
@@ -14,17 +14,24 @@ const fieldTableSourceSchema = z.object({
   source_label_column: z.string().min(1),
 });
 
+const toBoolean = (value) => {
+  if (value === 1 || value === "1") return true;
+  if (value === 0 || value === "0") return false;
+  if (typeof value === "boolean") return value;
+  return undefined;
+};
+
 const fieldSchema = z.object({
   id: z.number().int().positive().optional(),
   field_key: z.string().min(1, "Field key is required"),
   label: z.string().min(1, "Label is required"),
-  field_type: z.enum(["text", "textarea", "number", "select", "checkbox", "radio", "table_select", "score"]),
+  field_type: z.enum(["text", "textarea", "number", "select", "checkbox", "radio", "column", "score"]),
   mode: z.enum(["question", "check"]).optional(),
-  is_required: z.boolean().optional(),
+  is_required: z.preprocess(toBoolean, z.boolean().optional()),
   field_order: z.number().int().nonnegative().optional(),
   settings: z.record(z.any()).optional(),
   options: z.array(fieldOptionSchema).optional(),
-  table_source: fieldTableSourceSchema.optional(),
+  table_source: fieldTableSourceSchema.optional().nullable(),
 });
 
 const schemaFormCreate = z.object({
@@ -35,13 +42,13 @@ const schemaFormCreate = z.object({
 
 const schemaFormUpdate = z.object({
   description: z.string().optional(),
-  is_active: z.boolean().optional(),
+  is_active: z.preprocess(toBoolean, z.boolean().optional()),
   name: z.string().min(1, "Name is required").optional(),
   fields: z.array(fieldSchema).optional(),
 });
 
 const schemaFormAccess = z.object({
-  access_type: z.enum(["group", "link", "role"], { message: "Invalid access type" }),
+  access_type: z.enum(["group", "link", "role", "user", "public"], { message: "Invalid access type" }),
   access_value: z.string().min(1, "Access value is required"),
   expires_at: z.string().datetime().optional(),
 });

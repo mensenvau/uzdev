@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +22,21 @@ export default function ManageGroupPage() {
     []
   );
 
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && tabs.some((t) => t.key === tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, [searchParams, tabs]);
+
+  const handleTabChange = (tabKey: "general" | "users") => {
+    setActiveTab(tabKey);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tabKey);
+    if (groupId) params.set("id", groupId);
+    window.history.replaceState(null, "", `/groups/manage?${params.toString()}`);
+  };
+
   if (checking || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -41,7 +56,7 @@ export default function ManageGroupPage() {
           <Tabs>
             <TabsList className="bg-muted">
               {tabs.map((tab) => (
-                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => setActiveTab(tab.key as any)}>
+                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => handleTabChange(tab.key as any)}>
                   {tab.label}
                 </TabsTrigger>
               ))}

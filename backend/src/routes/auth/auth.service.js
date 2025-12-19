@@ -1,42 +1,21 @@
-const { comparePassword, hashPassword } = require('../../utils/password.util');
-const { signAccessToken, signRefreshToken, verifyRefreshToken, signPasswordResetToken, verifyPasswordResetToken } = require('../../utils/jwt.util');
-const { query, transaction } = require('../../utils/db');
-const { sendPasswordResetEmail } = require('../../utils/email.util');
-const { OAuth2Client } = require('google-auth-library');
+const { comparePassword, hashPassword } = require("../../utils/password.util");
+const { signAccessToken, signRefreshToken, verifyRefreshToken, signPasswordResetToken, verifyPasswordResetToken } = require("../../utils/jwt.util");
+const { queryMany, queryOne } = require("../../utils/db");
+const { sendPasswordResetEmail } = require("../../utils/email.util");
+const { OAuth2Client } = require("google-auth-library");
 
 const google_client_id = process.env.GOOGLE_CLIENT_ID || "";
 const google_client = google_client_id ? new OAuth2Client(google_client_id) : null;
 
 async function getUserWithRoles(user_id) {
-  const users = await query('SELECT * FROM system_users WHERE id = ?', [Number(user_id)]);
-  if (!users || users.length === 0) return null;
+  const user = await queryOne("SELECT * FROM system_users WHERE id = ?", [Number(user_id)]);
+  if (!user) return null;
 
-  const user = users[0];
-
-  // Get default role
-  let default_role = null;
-  if (user.default_role_id) {
-    const defaultRoles = await query('SELECT * FROM system_roles WHERE id = ?', [user.default_role_id]);
-    default_role = defaultRoles[0] || null;
-  }
-
-  // Get all roles
-  const roles = await query(
-    `SELECT r.*
-     FROM system_roles r
-     INNER JOIN system_user_roles ur ON ur.role_id = r.id
-     WHERE ur.user_id = ?`,
-    [Number(user_id)]
-  );
-
-  // Get all groups
-  const groups = await query(
-    `SELECT g.*
-     FROM system_groups g
-     INNER JOIN system_group_users gu ON gu.group_id = g.id
-     WHERE gu.user_id = ?`,
-    [Number(user_id)]
-  );
+  const [default_role, roles, groups] = await Promise.all([
+    user.default_role_id ? queryOne("SELECT * FROM system_roles WHERE id = ?", [user.default_role_id]) : Promise.resolve(null),
+    queryMany(`SELECT r.* FROM system_roles r INNER JOIN system_user_roles ur ON ur.role_id = r.id WHERE ur.user_id = ?`, [Number(user_id)]),
+    queryMany(`SELECT g.* FROM system_groups g INNER JOIN system_group_users gu ON gu.group_id = g.id WHERE gu.user_id = ?`, [Number(user_id)]),
+  ]);
 
   const role_list = roles;
   const role_lookup = new Map(role_list.map((role) => [role.id, role.name]));
@@ -59,36 +38,20 @@ async function getUserWithRoles(user_id) {
 }
 
 async function fnAuthSignUp(email, first_name, last_name, phone, password) {
-  // Check if user exists
-  const existing = await query('SELECT id FROM system_users WHERE email = ?', [email]);
+  const existing = await queryMany("SELECT id FROM system_users WHERE email = ?", [email]);
   if (existing.length > 0) throw new Error("Email already exists");
 
   const hashed_password = await hashPassword(password);
 
-  // Get "user" role
-  const roleResults = await query('SELECT id FROM system_roles WHERE name = ?', ['user']);
-  const role_user_id = roleResults[0]?.id || null;
+  const role_res = await queryMany("SELECT id FROM system_roles WHERE name = ?", ["user"]);
+  const role_user_id = role_res[0]?.id || null;
 
-  // Create user with transaction
-  const created_user_id = await transaction(async (conn) => {
-    // Insert user
-    const [userResult] = await conn.execute(
-      'INSERT INTO system_users (email, username, first_name, last_name, phone, password, default_role_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [email, email, first_name, last_name, phone, hashed_password, role_user_id]
-    );
+  const user_res = await queryMany("INSERT INTO system_users (email, username, first_name, last_name, phone, password, default_role_id) VALUES (?, ?, ?, ?, ?, ?, ?)", [email, email, first_name, last_name, phone, hashed_password, role_user_id]);
+  const created_user_id = user_res.insertId;
 
-    const user_id = userResult.insertId;
-
-    // Assign role if exists
-    if (role_user_id) {
-      await conn.execute(
-        'INSERT INTO system_user_roles (user_id, role_id) VALUES (?, ?)',
-        [user_id, role_user_id]
-      );
-    }
-
-    return user_id;
-  });
+  if (role_user_id) {
+    await queryMany("INSERT INTO system_user_roles (user_id, role_id) VALUES (?, ?)", [created_user_id, role_user_id]);
+  }
 
   const hydrated_user = await getUserWithRoles(created_user_id);
 
@@ -107,10 +70,7 @@ async function fnAuthSignUp(email, first_name, last_name, phone, password) {
 }
 
 async function fnAuthSignIn(email, password) {
-  const users = await query(
-    'SELECT id, email, username, first_name, last_name, phone, password FROM system_users WHERE email = ?',
-    [email]
-  );
+  const users = await queryMany("SELECT id, email, username, first_name, last_name, phone, password FROM system_users WHERE email = ?", [email]);
 
   if (!users || users.length === 0 || !users[0].password) {
     throw new Error("Invalid credentials");
@@ -152,36 +112,20 @@ async function fnAuthSignInWithGoogle(id_token) {
   const first_name = payload.given_name || "";
   const last_name = payload.family_name || "";
 
-  // Find user by google_id or email
-  let users = await query(
-    'SELECT id FROM system_users WHERE google_id = ? OR email = ?',
-    [google_id, email]
-  );
-
+  let users = await queryMany("SELECT id FROM system_users WHERE google_id = ? OR email = ?", [google_id, email]);
   let user_id;
 
   if (users.length === 0) {
-    // Create new user
-    const roleResults = await query('SELECT id FROM system_roles WHERE name = ?', ['user']);
-    const role_user_id = roleResults[0]?.id || null;
+    const role_res = await queryMany("SELECT id FROM system_roles WHERE name = ?", ["user"]);
+    const role_user_id = role_res[0]?.id || null;
 
-    user_id = await transaction(async (conn) => {
-      const [userResult] = await conn.execute(
-        'INSERT INTO system_users (email, username, first_name, last_name, google_id, default_role_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [email, email, first_name, last_name, google_id, role_user_id]
-      );
+    const user_res = await queryMany("INSERT INTO system_users (email, username, first_name, last_name, google_id, default_role_id) VALUES (?, ?, ?, ?, ?, ?)", [email, email, first_name, last_name, google_id, role_user_id]);
+    const new_user_id = user_res.insertId;
 
-      const new_user_id = userResult.insertId;
-
-      if (role_user_id) {
-        await conn.execute(
-          'INSERT INTO system_user_roles (user_id, role_id) VALUES (?, ?)',
-          [new_user_id, role_user_id]
-        );
-      }
-
-      return new_user_id;
-    });
+    if (role_user_id) {
+      await queryMany("INSERT INTO system_user_roles (user_id, role_id) VALUES (?, ?)", [new_user_id, role_user_id]);
+    }
+    user_id = new_user_id;
   } else {
     user_id = users[0].id;
   }
@@ -204,7 +148,7 @@ async function fnAuthRefreshToken(refresh_token) {
   const decoded = verifyRefreshToken(refresh_token);
   if (!decoded) throw new Error("Invalid refresh token");
 
-  const users = await query('SELECT id FROM system_users WHERE id = ?', [Number(decoded.user_id)]);
+  const users = await queryMany("SELECT id FROM system_users WHERE id = ?", [Number(decoded.user_id)]);
   if (users.length === 0) throw new Error("User not found");
 
   return {
@@ -214,7 +158,7 @@ async function fnAuthRefreshToken(refresh_token) {
 }
 
 async function fnAuthForgotPassword(email) {
-  const users = await query('SELECT id FROM system_users WHERE email = ?', [email]);
+  const users = await queryMany("SELECT id FROM system_users WHERE email = ?", [email]);
   if (users.length === 0) return;
 
   const token = signPasswordResetToken(users[0].id);
@@ -228,7 +172,7 @@ async function fnAuthResetPassword(token, new_password) {
   if (!decoded?.user_id) throw new Error("Invalid or expired reset token");
 
   const hashed = await hashPassword(new_password);
-  await query('UPDATE system_users SET password = ? WHERE id = ?', [hashed, Number(decoded.user_id)]);
+  await queryMany("UPDATE system_users SET password = ? WHERE id = ?", [hashed, Number(decoded.user_id)]);
 }
 
 module.exports = {

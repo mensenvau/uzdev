@@ -176,8 +176,8 @@ CREATE TABLE `system_forms` (
 CREATE TABLE `system_form_access` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `form_id` INT UNSIGNED NOT NULL,
-  `access_type` ENUM('role', 'group', 'link') NOT NULL DEFAULT 'role',
-  `access_value` VARCHAR(255) NOT NULL COMMENT 'Role name, group ID, or link token',
+  `access_type` ENUM('role', 'group', 'link', 'user', 'public') NOT NULL DEFAULT 'role',
+  `access_value` VARCHAR(255) NOT NULL COMMENT 'Role name, group ID, user ID, or link token',
   `expires_at` TIMESTAMP NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -186,7 +186,7 @@ CREATE TABLE `system_form_access` (
   INDEX `idx_access_type_value` (`access_type`, `access_value`),
   INDEX `idx_expires_at` (`expires_at`),
   CONSTRAINT `fk_form_access_form` FOREIGN KEY (`form_id`) REFERENCES `system_forms` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Form access control by role/group/link';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Form access control by role/group/user/link/public';
 
 -- ============================================================================
 -- FORM FIELDS TABLE
@@ -196,7 +196,7 @@ CREATE TABLE `system_form_fields` (
   `form_id` INT UNSIGNED NOT NULL,
   `field_key` VARCHAR(255) NOT NULL,
   `label` VARCHAR(255) NOT NULL,
-  `field_type` ENUM('text', 'textarea', 'number', 'select', 'checkbox', 'radio', 'table_select', 'score') NOT NULL,
+  `field_type` ENUM('text', 'textarea', 'number', 'select', 'checkbox', 'radio', 'column', 'score') NOT NULL,
   `mode` ENUM('question', 'check') NOT NULL DEFAULT 'question',
   `is_required` BOOLEAN NOT NULL DEFAULT FALSE,
   `field_order` INT NOT NULL DEFAULT 0,
@@ -240,8 +240,8 @@ CREATE TABLE `system_form_field_table_sources` (
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `idx_field` (`field_id`),
-  CONSTRAINT `fk_field_table_source_field` FOREIGN KEY (`field_id`) REFERENCES `system_form_fields` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Dynamic table source for table_select fields';
+CONSTRAINT `fk_field_table_source_field` FOREIGN KEY (`field_id`) REFERENCES `system_form_fields` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Dynamic table source for column fields';
 
 -- ============================================================================
 -- FORM RESPONSES TABLE

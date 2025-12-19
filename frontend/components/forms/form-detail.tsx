@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import api from "@/lib/api";
@@ -23,6 +23,7 @@ type FormField = {
   is_required?: boolean;
   options?: FormFieldOption[];
   settings?: Record<string, any>;
+  table_source?: { source_table: string; source_value_column: string; source_label_column: string } | null;
 };
 
 type FormData = {
@@ -44,6 +45,7 @@ export function FormDetail({ formId }: FormDetailProps) {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [columnOptions, setColumnOptions] = useState<Record<number, FormFieldOption[]>>({});
 
   const fieldCount = useMemo(() => form?.fields?.length ?? 0, [form?.fields]);
 
@@ -60,6 +62,42 @@ export function FormDetail({ formId }: FormDetailProps) {
         });
         setForm({ ...resolved, fields });
         setFormValues(initialValues);
+        // preload column options for column fields
+        const columnFields = fields.filter((f) => f.field_type === "column" && f.table_source);
+        if (columnFields.length) {
+          const loadColumns = async () => {
+            const entries = await Promise.all(
+              columnFields.map(async (f) => {
+                try {
+                  const rows = await api
+                    .get("/forms/meta/column-values", {
+                      params: {
+                        table: f.table_source?.source_table,
+                        value_column: f.table_source?.source_value_column,
+                        label_column: f.table_source?.source_label_column,
+                      },
+                    })
+                    .then((res) => res.data.rows || res.data || []);
+                  const options = Array.isArray(rows)
+                    ? rows.map((r: any) => ({
+                        value: r.value ?? r[f.table_source?.source_value_column || ""] ?? "",
+                        label: r.label ?? r[f.table_source?.source_label_column || ""] ?? r.value ?? "",
+                      }))
+                    : [];
+                  return [f.id, options] as const;
+                } catch {
+                  return [f.id, []] as const;
+                }
+              })
+            );
+            const map: Record<number, FormFieldOption[]> = {};
+            entries.forEach(([id, opts]) => {
+              map[id] = opts;
+            });
+            setColumnOptions(map);
+          };
+          loadColumns();
+        }
       } catch (err: any) {
         setError(err.response?.data?.message || "Failed to load form");
       } finally {
@@ -181,7 +219,7 @@ export function FormDetail({ formId }: FormDetailProps) {
                 </>
               )}
 
-              {["select", "table_select"].includes(field.field_type) &&
+              {field.field_type === "select" &&
                 ((field.options || []).length > 0 ? (
                   <select id={field.field_key} className="w-full rounded-md border px-3 py-2 text-sm" value={formValues[field.id] ?? ""} onChange={(e) => handleChange(field.id, e.target.value)} required={field.is_required} disabled={submitting}>
                     <option value="">Select an option</option>
@@ -194,6 +232,24 @@ export function FormDetail({ formId }: FormDetailProps) {
                 ) : (
                   <Input id={field.field_key} value={formValues[field.id] ?? ""} onChange={(e) => handleChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} placeholder="Enter a value" />
                 ))}
+
+              {field.field_type === "column" && (
+                <select
+                  id={field.field_key}
+                  className="w-full rounded-md border px-3 py-2 text-sm"
+                  value={formValues[field.id] ?? ""}
+                  onChange={(e) => handleChange(field.id, e.target.value)}
+                  required={field.is_required}
+                  disabled={submitting || !columnOptions[field.id]}
+                >
+                  <option value="">Select a value</option>
+                  {(columnOptions[field.id] || []).map((option, idx) => (
+                    <option key={`${option.value}-${idx}`} value={option.value}>
+                      {option.label || option.value}
+                    </option>
+                  ))}
+                </select>
+              )}
 
               {["radio", "score"].includes(field.field_type) && (
                 <div className="space-y-2">
