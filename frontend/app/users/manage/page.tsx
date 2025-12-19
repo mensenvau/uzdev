@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { Suspense, useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +10,7 @@ import { RolesTab } from "../tabs/roles";
 import { GroupsTab } from "../tabs/groups";
 import api from "@/lib/api";
 
-export function ManageUserPage() {
+function ManageUserPageContent() {
   const { user, checking, handleLogout } = useAuthGuard();
   const [activeTab, setActiveTab] = useState<"general" | "roles" | "groups">("general");
   const [loadedUser, setLoadedUser] = useState<any>(null);
@@ -105,4 +105,16 @@ export function ManageUserPage() {
   );
 }
 
-export default ManageUserPage;
+export default function ManageUserPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      }
+    >
+      <ManageUserPageContent />
+    </Suspense>
+  );
+}

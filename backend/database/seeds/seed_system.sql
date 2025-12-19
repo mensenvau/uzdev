@@ -72,6 +72,9 @@ INSERT INTO `system_policies` (`name`, `description`) VALUES
 ('form.view_responses', 'View form responses'),
 ('form.review', 'Review and score responses'),
 ('form.access_manage', 'Manage form access control'),
+('form.add_access', 'Add form access rules'),
+('form.public_link', 'Generate public form links'),
+('form.response_detail', 'View form response details'),
 
 -- Self Management Policies
 ('me.get', 'Get own profile'),
@@ -129,7 +132,7 @@ ON DUPLICATE KEY UPDATE `description` = VALUES(`description`);
 -- ============================================================================
 -- SUPER ADMIN USER
 -- ============================================================================
--- Password: @Aa12345!
+-- Password: Admin@123
 -- Bcrypt hash with salt rounds = 10
 INSERT INTO `system_users` (
   `email`,
@@ -145,7 +148,7 @@ INSERT INTO `system_users` (
   'Super',
   'Admin',
   '+998900000001',
-  '$2b$10$oarymf3lRpSHqcL/WOaN5uNiJnLT6YZYIa2GmJ/LBs/d7rYPU9YpC',
+  '$2b$10$sq7LKaJD9mVrpuWp6cu./.762O7UDy412AZAUdVVAh61pZr20QCgq',
   @role_super_id
 )
 ON DUPLICATE KEY UPDATE

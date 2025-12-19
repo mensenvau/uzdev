@@ -1,31 +1,33 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthGuard } from "@/lib/use-auth-guard";
 import { GeneralTab } from "@/app/forms/tabs/general";
 import { FieldsTab } from "@/app/forms/tabs/fields";
+import { AccessTab } from "@/app/forms/tabs/access";
 import { ResponsesTab } from "@/app/forms/tabs/responses";
 import { StatsTab } from "@/app/forms/tabs/stats";
 import { PreviewTab } from "@/app/forms/tabs/preview";
 
-type TabKey = "general" | "fields" | "responses" | "stats" | "preview";
+type TabKey = "general" | "fields" | "access" | "responses" | "stats" | "preview";
 
-export default function ManageFormPage() {
+function ManageFormPageContent() {
   const { user, checking, handleLogout } = useAuthGuard();
   const router = useRouter();
   const searchParams = useSearchParams();
   const formId = searchParams.get("id");
-  const [activeTab, setActiveTab] = useState<TabKey | "preview">(() => (searchParams.get("tab") as TabKey) || "general");
+  const [activeTab, setActiveTab] = useState<TabKey>(() => (searchParams.get("tab") as TabKey) || "general");
 
   const tabItems = useMemo(
     () => [
       { key: "general", label: "General" },
       { key: "fields", label: "Fields" },
-      { key: "responses", label: "Responses" },
+      { key: "access", label: "Access" },
       { key: "stats", label: "Stats" },
+      { key: "responses", label: "Responses" },
       { key: "preview", label: "Preview" },
     ],
     []
@@ -40,7 +42,7 @@ export default function ManageFormPage() {
     }
   }, [searchParams, tabItems]);
 
-  const handleTabChange = (tabKey: TabKey | "preview") => {
+  const handleTabChange = (tabKey: TabKey) => {
     setActiveTab(tabKey);
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", tabKey);
@@ -80,11 +82,26 @@ export default function ManageFormPage() {
         <div className="rounded-xl border bg-white/80 backdrop-blur p-6 space-y-6">
           {activeTab === "general" && <GeneralTab formId={formId} />}
           {activeTab === "fields" && <FieldsTab formId={formId} />}
+          {activeTab === "access" && <AccessTab formId={formId} />}
           {activeTab === "responses" && <ResponsesTab formId={formId} />}
           {activeTab === "stats" && <StatsTab formId={formId} />}
           {activeTab === "preview" && <PreviewTab formId={formId} />}
         </div>
       </div>
     </DashboardShell>
+  );
+}
+
+export default function ManageFormPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      }
+    >
+      <ManageFormPageContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,7 +8,7 @@ import { useAuthGuard } from "@/lib/use-auth-guard";
 import { GeneralTab } from "@/app/groups/tabs/general";
 import { UsersTab } from "@/app/groups/tabs/users";
 
-export default function ManageGroupPage() {
+function ManageGroupPageContent() {
   const { user, checking, handleLogout } = useAuthGuard();
   const [activeTab, setActiveTab] = useState<"general" | "users">("general");
   const searchParams = useSearchParams();
@@ -70,5 +70,19 @@ export default function ManageGroupPage() {
         </div>
       </div>
     </DashboardShell>
+  );
+}
+
+export default function ManageGroupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      }
+    >
+      <ManageGroupPageContent />
+    </Suspense>
   );
 }

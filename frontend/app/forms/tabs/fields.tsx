@@ -10,11 +10,12 @@ import api from "@/lib/api";
 type Option = { id?: number; label?: string; value: string; score?: number; option_order?: number };
 type TableSource = { source_table: string; source_value_column: string; source_label_column: string };
 type ColumnMeta = { table_name: string; column_name: string; data_type?: string };
+type FieldType = "text" | "textarea" | "number" | "select" | "checkbox" | "radio" | "column" | "score" | "markdown" | "page_break";
 type Field = {
   id?: number;
   field_key?: string;
   label: string;
-  field_type: string;
+  field_type: FieldType;
   is_required?: boolean;
   field_order?: number;
   options?: Option[];
@@ -31,9 +32,12 @@ const FIELD_TYPES = [
   { value: "radio", label: "Multiple choice" },
   { value: "column", label: "Column (DB)" },
   { value: "score", label: "Score choices" },
+  { value: "markdown", label: "Markdown / text" },
+  { value: "page_break", label: "Page break" },
 ];
 
 const OPTION_TYPES = ["select", "checkbox", "radio", "score"];
+const DISPLAY_ONLY_TYPES: FieldType[] = ["markdown", "page_break"];
 
 const createField = (index: number): Field => ({
   field_key: `field_${Date.now()}_${index}`,
@@ -44,7 +48,8 @@ const createField = (index: number): Field => ({
   settings: {},
 });
 
-const requiresOptions = (type: string) => OPTION_TYPES.includes(type);
+const requiresOptions = (type: FieldType) => OPTION_TYPES.includes(type);
+const canBeRequired = (type: FieldType) => !DISPLAY_ONLY_TYPES.includes(type);
 
 export function FieldsTab({ formId }: { formId: string | null }) {
   const [fields, setFields] = useState<Field[]>([]);
@@ -65,6 +70,7 @@ export function FieldsTab({ formId }: { formId: string | null }) {
         const normalized = Array.isArray(data.fields)
           ? data.fields.map((f: any, idx: number) => ({
               ...f,
+              field_type: (f.field_type as FieldType) || "text",
               options: Array.isArray(f.options) ? f.options : [],
               settings: f.settings || {},
               field_order: f.field_order ?? idx,
@@ -222,6 +228,9 @@ export function FieldsTab({ formId }: { formId: string | null }) {
           {fields.map((field, idx) => {
             const showOptions = requiresOptions(field.field_type);
             const showColumnPicker = field.field_type === "column";
+            const isMarkdown = field.field_type === "markdown";
+            const isPageBreak = field.field_type === "page_break";
+            const showRequiredToggle = canBeRequired(field.field_type);
             const columnList = columnResults[idx] || [];
             const selectedColumn = field.table_source;
 
@@ -232,7 +241,18 @@ export function FieldsTab({ formId }: { formId: string | null }) {
                     <textarea className="w-full rounded-lg border px-3 py-2 text-sm" rows={1} placeholder="Field label" value={field.label} onChange={(e) => updateField(idx, { label: e.target.value })} />
                   </div>
                   <div className="flex items-center gap-2">
-                    <select className="rounded-md border px-3 py-2 text-sm" value={field.field_type} onChange={(e) => updateField(idx, { field_type: e.target.value, options: requiresOptions(e.target.value) ? field.options || [] : [] })}>
+                    <select
+                      className="rounded-md border px-3 py-2 text-sm"
+                      value={field.field_type}
+                      onChange={(e) => {
+                        const nextType = e.target.value as FieldType;
+                        updateField(idx, {
+                          field_type: nextType,
+                          options: requiresOptions(nextType) ? field.options || [] : [],
+                          is_required: canBeRequired(nextType) ? field.is_required : false,
+                        });
+                      }}
+                    >
                       {FIELD_TYPES.map((t) => (
                         <option key={t.value} value={t.value}>
                           {t.label}
@@ -329,6 +349,34 @@ export function FieldsTab({ formId }: { formId: string | null }) {
                   </div>
                 )}
 
+                {isMarkdown && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Markdown content</label>
+                    <textarea
+                      className="w-full rounded-md border px-3 py-2 text-sm"
+                      rows={4}
+                      placeholder="This content is displayed as read-only markdown to users."
+                      value={field.settings?.content || ""}
+                      onChange={(e) => updateField(idx, { settings: { ...(field.settings || {}), content: e.target.value } })}
+                    />
+                    <p className="text-xs text-muted-foreground">Use this for instructions, descriptions, or static blocks.</p>
+                  </div>
+                )}
+
+                {isPageBreak && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Page description (optional)</label>
+                    <textarea
+                      className="w-full rounded-md border px-3 py-2 text-sm"
+                      rows={3}
+                      placeholder="Add context for the next page."
+                      value={field.settings?.description || ""}
+                      onChange={(e) => updateField(idx, { settings: { ...(field.settings || {}), description: e.target.value } })}
+                    />
+                    <p className="text-xs text-muted-foreground">A page break starts a new page. Everything after this block is shown on the next step.</p>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-end gap-3 pt-1">
                   <Button variant="ghost" size="sm" onClick={() => duplicateField(idx)}>
                     Duplicate
@@ -336,10 +384,14 @@ export function FieldsTab({ formId }: { formId: string | null }) {
                   <Button variant="ghost" size="sm" onClick={() => removeField(idx)}>
                     Remove
                   </Button>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={Boolean(field.is_required)} onChange={(e) => updateField(idx, { is_required: e.target.checked })} />
-                    Required
-                  </label>
+                  {showRequiredToggle ? (
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={Boolean(field.is_required)} onChange={(e) => updateField(idx, { is_required: e.target.checked })} />
+                      Required
+                    </label>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Display-only</span>
+                  )}
                 </div>
               </div>
             );

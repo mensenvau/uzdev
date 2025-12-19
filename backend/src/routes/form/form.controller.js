@@ -1,6 +1,19 @@
 const { asyncHandler } = require("../../utils/async.util");
 const { sendSuccess } = require("../../utils/response.util");
-const { fnFormAddAccess, fnFormCreate, fnFormDelete, fnFormGet, fnFormList, fnFormResponses, fnFormSearchColumns, fnFormSubmit, fnFormUpdate, fnFormColumnValues } = require("./form.service");
+const {
+  fnFormAddAccess,
+  fnFormCreate,
+  fnFormDelete,
+  fnFormGet,
+  fnFormGetPublic,
+  fnFormList,
+  fnFormResponses,
+  fnFormResponseDetail,
+  fnFormSearchColumns,
+  fnFormSubmit,
+  fnFormUpdate,
+  fnFormColumnValues,
+} = require("./form.service");
 
 const formAddAccess = asyncHandler(async (req, res) => {
   const { access_type, access_value, expires_at } = req.body;
@@ -21,6 +34,11 @@ const formDelete = asyncHandler(async (req, res) => {
 
 const formGet = asyncHandler(async (req, res) => {
   const form = await fnFormGet(req.params.id);
+  sendSuccess(res, { form });
+});
+
+const formGetPublic = asyncHandler(async (req, res) => {
+  const form = await fnFormGetPublic(req.params.id, req.query?.token);
   sendSuccess(res, { form });
 });
 
@@ -50,6 +68,12 @@ const formResponses = asyncHandler(async (req, res) => {
   sendSuccess(res, { responses });
 });
 
+const formResponseDetail = asyncHandler(async (req, res) => {
+  const { id, responseId } = req.params;
+  const details = await fnFormResponseDetail(id, responseId);
+  sendSuccess(res, details);
+});
+
 const formColumns = asyncHandler(async (req, res) => {
   const { q } = req.query;
   const columns = await fnFormSearchColumns(q || "");
@@ -68,9 +92,11 @@ module.exports = {
   formDelete,
   formGet,
   formList,
+  formGetPublic,
   formSubmit,
   formUpdate,
   formResponses,
+  formResponseDetail,
   formColumns,
   formColumnValues,
 };

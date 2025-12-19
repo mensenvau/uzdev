@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +9,7 @@ import { GeneralTab } from "@/app/roles/tabs/general";
 import { UsersTab } from "@/app/roles/tabs/users";
 import { PoliciesTab } from "@/app/roles/tabs/policies";
 
-export default function ManageRolePage() {
+function ManageRolePageContent() {
   const { user, checking, handleLogout } = useAuthGuard();
   const [activeTab, setActiveTab] = useState<"general" | "users" | "policies">("general");
   const searchParams = useSearchParams();
@@ -74,5 +74,19 @@ export default function ManageRolePage() {
         </div>
       </div>
     </DashboardShell>
+  );
+}
+
+export default function ManageRolePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      }
+    >
+      <ManageRolePageContent />
+    </Suspense>
   );
 }

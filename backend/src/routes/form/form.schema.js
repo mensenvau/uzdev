@@ -25,7 +25,7 @@ const fieldSchema = z.object({
   id: z.number().int().positive().optional(),
   field_key: z.string().min(1, "Field key is required"),
   label: z.string().min(1, "Label is required"),
-  field_type: z.enum(["text", "textarea", "number", "select", "checkbox", "radio", "column", "score"]),
+  field_type: z.enum(["text", "textarea", "number", "select", "checkbox", "radio", "column", "score", "markdown", "page_break"]),
   mode: z.enum(["question", "check"]).optional(),
   is_required: z.preprocess(toBoolean, z.boolean().optional()),
   field_order: z.number().int().nonnegative().optional(),

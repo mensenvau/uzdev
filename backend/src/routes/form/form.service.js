@@ -2,6 +2,17 @@ const { queryMany } = require("../../utils/db");
 
 const OPTION_FIELD_TYPES = new Set(["select", "checkbox", "radio", "score"]);
 const TABLE_FIELD_TYPES = new Set(["column"]);
+const NON_ANSWER_FIELD_TYPES = new Set(["markdown", "page_break"]);
+
+function parseStoredValue(value) {
+  if (value === null || value === undefined) return value;
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
 
 function normalizeSettings(settings) {
   if (!settings) return {};
@@ -17,6 +28,20 @@ function normalizeSettings(settings) {
 
 function buildPlaceholders(items) {
   return items.map(() => "?").join(", ");
+}
+
+function sanitizeIdentifier(value, prefix = "") {
+  if (typeof value !== "string" || !value.trim()) {
+    return "";
+  }
+  const normalized = value.trim();
+  if (!/^[a-zA-Z0-9_]+$/.test(normalized)) {
+    return "";
+  }
+  if (prefix && !normalized.toLowerCase().startsWith(prefix.toLowerCase())) {
+    return "";
+  }
+  return normalized;
 }
 
 async function loadFieldsWithMeta(form_id, client) {
@@ -84,7 +109,7 @@ async function upsertFields(form_id, fields = [], client) {
     const field_type = field.field_type;
     if (!field_type) throw new Error("Field type is required");
     const mode = field.mode === "check" ? "check" : "question";
-    const is_required = Boolean(field.is_required);
+    const is_required = NON_ANSWER_FIELD_TYPES.has(field_type) ? false : Boolean(field.is_required);
     const field_order = Number.isFinite(Number(field.field_order)) ? Number(field.field_order) : index;
     const settings_object = normalizeSettings(field.settings);
     const settings = Object.keys(settings_object).length ? JSON.stringify(settings_object) : null;
@@ -274,6 +299,51 @@ async function fnFormGet(id, client) {
   };
 }
 
+async function fnFormGetPublic(id, token) {
+  const access_rows = await queryMany(
+    `SELECT access_type, access_value, expires_at
+     FROM system_form_access
+     WHERE form_id = ?`,
+    [Number(id)]
+  );
+
+  const now = new Date();
+  const isPublic = access_rows.some((row) => {
+    if (row.expires_at && new Date(row.expires_at) < now) return false;
+    return row.access_type === "public";
+  });
+  const hasLink = access_rows.some((row) => {
+    if (row.expires_at && new Date(row.expires_at) < now) return false;
+    return row.access_type === "link" && token && row.access_value === token;
+  });
+
+  if (!isPublic && !hasLink) {
+    throw new Error("Form is not public");
+  }
+
+  const form_rows = await queryMany(
+    `SELECT f.id, f.name, f.description, f.is_active, f.created_at
+     FROM system_forms f
+     WHERE f.id = ?`,
+    [Number(id)]
+  );
+
+  if (!form_rows.length) {
+    throw new Error("Form not found");
+  }
+
+  if (form_rows[0].is_active === 0) {
+    throw new Error("Form is inactive");
+  }
+
+  const fields = await loadFieldsWithMeta(id, null);
+
+  return {
+    ...form_rows[0],
+    fields,
+  };
+}
+
 async function fnFormCreate(name, description, created_by, fields = []) {
   const created = await queryMany(`INSERT INTO system_forms (name, description, created_by) VALUES (?, ?, ?)`, [name, description || null, created_by ? Number(created_by) : null]);
 
@@ -379,6 +449,8 @@ async function fnFormSubmit(form_id, user_id, answers) {
   }
 
   for (const field of fields) {
+    if (NON_ANSWER_FIELD_TYPES.has(field.field_type)) continue;
+
     const answer = answers_by_field.get(Number(field.id));
     const value = answer?.value;
     const has_value = Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && String(value).trim() !== "";
@@ -397,6 +469,8 @@ async function fnFormSubmit(form_id, user_id, answers) {
   let total_score = 0;
 
   for (const field of fields) {
+    if (NON_ANSWER_FIELD_TYPES.has(field.field_type)) continue;
+
     const answer = answers_by_field.get(Number(field.id));
     if (!answer) continue;
 
@@ -448,6 +522,51 @@ async function fnFormResponses(form_id) {
   );
 }
 
+async function fnFormResponseDetail(form_id, response_id) {
+  const response_rows = await queryMany(
+    `SELECT id, form_id, user_id, total_score, status, created_at, updated_at
+     FROM system_form_responses
+     WHERE id = ? AND form_id = ?`,
+    [Number(response_id), Number(form_id)]
+  );
+
+  if (!response_rows.length) {
+    throw new Error("Response not found");
+  }
+
+  const fields = await loadFieldsWithMeta(form_id, null);
+  const value_rows = await queryMany(
+    `SELECT field_id, value, score
+     FROM system_form_response_values
+     WHERE response_id = ?`,
+    [Number(response_id)]
+  );
+
+  const valueMap = new Map();
+  value_rows.forEach((row) => {
+    valueMap.set(Number(row.field_id), {
+      value: parseStoredValue(row.value),
+      score: row.score,
+    });
+  });
+
+  const answers = fields.map((field) => {
+    const value = valueMap.get(Number(field.id));
+    return {
+      field_id: field.id,
+      label: field.label,
+      field_type: field.field_type,
+      value: value?.value ?? null,
+      score: value?.score ?? null,
+    };
+  });
+
+  return {
+    response: response_rows[0],
+    answers,
+  };
+}
+
 async function fnFormSearchColumns(search = "") {
   const schema_name = process.env.DB_NAME || "core_app";
   const like_value = `%${search}%`;
@@ -461,20 +580,6 @@ async function fnFormSearchColumns(search = "") {
      LIMIT 25`,
     [schema_name, like_value, like_value]
   );
-}
-
-function sanitizeIdentifier(value, prefix = "") {
-  if (typeof value !== "string" || !value.trim()) {
-    return "";
-  }
-  const normalized = value.trim();
-  if (!/^[a-zA-Z0-9_]+$/.test(normalized)) {
-    return "";
-  }
-  if (prefix && !normalized.toLowerCase().startsWith(prefix.toLowerCase())) {
-    return "";
-  }
-  return normalized;
 }
 
 async function fnFormColumnValues(table_name, value_column, label_column) {
@@ -504,9 +609,11 @@ module.exports = {
   fnFormCreate,
   fnFormUpdate,
   fnFormDelete,
+  fnFormGetPublic,
   fnFormAddAccess,
   fnFormSubmit,
   fnFormResponses,
+  fnFormResponseDetail,
   fnFormSearchColumns,
   fnFormColumnValues,
 };

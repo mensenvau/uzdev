@@ -25,7 +25,17 @@ async function runMigrations() {
     // Get all migration files
     const migrationsDir = path.join(__dirname, "../migrations");
     const files = await fs.readdir(migrationsDir);
-    const sqlFiles = files.filter((f) => f.endsWith(".sql")).sort();
+    const priority = ["init_system.sql", "init_public.sql"];
+    const sqlFiles = files
+      .filter((f) => f.endsWith(".sql"))
+      .sort((a, b) => {
+        const ai = priority.indexOf(a);
+        const bi = priority.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
 
     if (sqlFiles.length === 0) {
       console.log("⚠️  No migration files found");
