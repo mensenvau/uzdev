@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import api from "@/lib/api";
+import { Input } from "@/components/ui/input";
 import { setAccessToken, setRefreshToken, setUserInfo } from "@/lib/auth";
-import { toast } from "sonner";
 import { formatApiError } from "@/lib/format-api-error";
+import { toast } from "sonner";
+import api from "@/lib/api";
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 export function RegisterForm() {

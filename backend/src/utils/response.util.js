@@ -1,52 +1,47 @@
-export function sendSuccess(res, data = null, message = "Success", statusCode = 200) {
-  return res.status(statusCode).json({
+/**
+ * Response Utility
+ * Standardized API response helpers
+ */
+
+const sendSuccess = (res, data, message = "Success", status = 200) => {
+  return res.status(status).json({
     success: true,
     message,
     data,
   });
-}
+};
 
-export function sendError(res, message = "Error", statusCode = 400, errors = null) {
-  return res.status(statusCode).json({
+const sendError = (res, message = "Error", status = 400) => {
+  return res.status(status).json({
     success: false,
     message,
-    ...(errors && { errors }),
   });
-}
+};
 
-export function sendValidationError(res, errors) {
-  return res.status(422).json({
-    success: false,
-    message: "Validation failed",
-    errors,
-  });
-}
-
-export function sendUnauthorized(res, message = "Unauthorized") {
+const sendUnauthorized = (res, message = "Unauthorized") => {
   return res.status(401).json({
     success: false,
     message,
   });
-}
+};
 
-export function sendForbidden(res, message = "Forbidden") {
+const sendForbidden = (res, message = "Forbidden") => {
   return res.status(403).json({
     success: false,
     message,
   });
-}
+};
 
-export function sendNotFound(res, message = "Not found") {
+const sendNotFound = (res, message = "Not found") => {
   return res.status(404).json({
     success: false,
     message,
   });
-}
+};
 
-export default {
+module.exports = {
   sendSuccess,
   sendError,
-  sendValidationError,
   sendUnauthorized,
   sendForbidden,
   sendNotFound,

@@ -1,87 +1,113 @@
-import { sendForbidden } from "../utils/response.util.js";
-import { prisma } from "../utils/db.util.js";
+/**
+ * Policy Middleware
+ * Checks user permissions using role-based policies
+ */
 
-export async function userHasPolicy(user_id, policy_name) {
-  const roles = await prisma.userRole.findMany({
-    where: { user_id: Number(user_id) },
-    select: {
-      role: {
-        select: {
-          policies: {
-            select: {
-              policy: { select: { name: true } },
-            },
-          },
-        },
-      },
-    },
-  });
+const { sendForbidden } = require('../utils/response.util');
+const { queryMany } = require('../utils/db');
 
-  return roles.some((role_link) => role_link.role.policies.some((role_policy) => role_policy.policy.name === policy_name));
+/**
+ * Check if user has a specific policy
+ * @param {number} userId - User ID
+ * @param {string} policyName - Policy name to check
+ * @returns {Promise<boolean>} True if user has the policy
+ */
+async function userHasPolicy(userId, policyName) {
+  const sql = `
+    SELECT DISTINCT p.name
+    FROM system_users u
+    INNER JOIN system_user_roles ur ON ur.user_id = u.id
+    INNER JOIN system_role_policies rp ON rp.role_id = ur.role_id
+    INNER JOIN system_policies p ON p.id = rp.policy_id
+    WHERE u.id = ? AND p.name = ?
+    LIMIT 1
+  `;
+
+  const results = await queryMany(sql, [userId, policyName]);
+  return results.length > 0;
 }
 
-export function policyMiddleware(required_policy) {
+/**
+ * Middleware to check single policy
+ * @param {string} requiredPolicy - Policy name required
+ * @returns {Function} Express middleware
+ */
+function policyMiddleware(requiredPolicy) {
   return async (req, res, next) => {
     try {
       if (!req.user) {
-        return sendForbidden(res, "Authentication required");
+        return sendForbidden(res, 'Authentication required');
       }
 
-      const has_policy = await userHasPolicy(req.user.id, required_policy);
-      if (!has_policy) {
-        return sendForbidden(res, `Missing required policy: ${required_policy}`);
+      const hasPolicy = await userHasPolicy(req.user.id, requiredPolicy);
+
+      if (!hasPolicy) {
+        return sendForbidden(res, `Missing required policy: ${requiredPolicy}`);
       }
 
       next();
     } catch (error) {
-      return sendForbidden(res, "Policy check failed");
+      console.error('Policy check error:', error);
+      return sendForbidden(res, 'Policy check failed');
     }
   };
 }
 
-export function anyPolicyMiddleware(policies) {
+/**
+ * Middleware to check if user has ANY of the specified policies
+ * @param {string[]} policies - Array of policy names
+ * @returns {Function} Express middleware
+ */
+function anyPolicyMiddleware(policies) {
   return async (req, res, next) => {
     try {
       if (!req.user) {
-        return sendForbidden(res, "Authentication required");
+        return sendForbidden(res, 'Authentication required');
       }
 
       for (const policy of policies) {
-        const has_policy = await userHasPolicy(req.user.id, policy);
-        if (has_policy) {
+        const hasPolicy = await userHasPolicy(req.user.id, policy);
+        if (hasPolicy) {
           return next();
         }
       }
 
-      return sendForbidden(res, `Missing required policies: ${policies.join(", ")}`);
+      return sendForbidden(res, `Missing required policies: ${policies.join(', ')}`);
     } catch (error) {
-      return sendForbidden(res, "Policy check failed");
+      console.error('Policy check error:', error);
+      return sendForbidden(res, 'Policy check failed');
     }
   };
 }
 
-export function allPoliciesMiddleware(policies) {
+/**
+ * Middleware to check if user has ALL of the specified policies
+ * @param {string[]} policies - Array of policy names
+ * @returns {Function} Express middleware
+ */
+function allPoliciesMiddleware(policies) {
   return async (req, res, next) => {
     try {
       if (!req.user) {
-        return sendForbidden(res, "Authentication required");
+        return sendForbidden(res, 'Authentication required');
       }
 
       for (const policy of policies) {
-        const has_policy = await userHasPolicy(req.user.id, policy);
-        if (!has_policy) {
+        const hasPolicy = await userHasPolicy(req.user.id, policy);
+        if (!hasPolicy) {
           return sendForbidden(res, `Missing required policy: ${policy}`);
         }
       }
 
       next();
     } catch (error) {
-      return sendForbidden(res, "Policy check failed");
+      console.error('Policy check error:', error);
+      return sendForbidden(res, 'Policy check failed');
     }
   };
 }
 
-export default {
+module.exports = {
   policyMiddleware,
   anyPolicyMiddleware,
   allPoliciesMiddleware,

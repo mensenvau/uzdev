@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +9,7 @@ import { GeneralTab } from "@/app/roles/tabs/general";
 import { UsersTab } from "@/app/roles/tabs/users";
 import { PoliciesTab } from "@/app/roles/tabs/policies";
 
-export default function ManageRolePage() {
+function ManageRolePageContent() {
   const { user, checking, handleLogout } = useAuthGuard();
   const [activeTab, setActiveTab] = useState<"general" | "users" | "policies">("general");
   const searchParams = useSearchParams();
@@ -24,6 +24,21 @@ export default function ManageRolePage() {
     ],
     []
   );
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && tabs.some((t) => t.key === tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, [searchParams, tabs]);
+
+  const handleTabChange = (tabKey: "general" | "users" | "policies") => {
+    setActiveTab(tabKey);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tabKey);
+    if (roleId) params.set("id", roleId);
+    window.history.replaceState(null, "", `/roles/manage?${params.toString()}`);
+  };
 
   if (checking || !user) {
     return (
@@ -44,7 +59,7 @@ export default function ManageRolePage() {
           <Tabs>
             <TabsList className="bg-muted">
               {tabs.map((tab) => (
-                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => setActiveTab(tab.key as any)}>
+                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => handleTabChange(tab.key as any)}>
                   {tab.label}
                 </TabsTrigger>
               ))}
@@ -59,5 +74,19 @@ export default function ManageRolePage() {
         </div>
       </div>
     </DashboardShell>
+  );
+}
+
+export default function ManageRolePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      }
+    >
+      <ManageRolePageContent />
+    </Suspense>
   );
 }

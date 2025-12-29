@@ -1,18 +1,18 @@
-import express from "express";
-import { authMiddleware } from "../../middlewares/auth.middleware.js";
-import { policyMiddleware } from "../../middlewares/policy.middleware.js";
-import { validateMiddleware } from "../../middlewares/validate.middleware.js";
-import { schemaRoleAssign, schemaRoleCreate, schemaRoleUpdate } from "./role.schema.js";
-import { roleAssign, roleCreate, roleDelete, roleGet, roleList, roleRemove, roleUpdate } from "./role.controller.js";
+const express = require("express");
+const { authMiddleware } = require("../../middlewares/auth.middleware");
+const { policyMiddleware } = require("../../middlewares/policy.middleware");
+const { validateBody } = require("../../middlewares/validate.middleware");
+const { schemaRoleAssign, schemaRoleCreate, schemaRoleUpdate } = require("./role.schema");
+const { roleAssign, roleCreate, roleDelete, roleGet, roleList, roleRemove, roleUpdate } = require("./role.controller");
 
 const router = express.Router();
 
 router.get("/", authMiddleware, policyMiddleware("role.list"), roleList);
 router.get("/:id", authMiddleware, policyMiddleware("role.get"), roleGet);
-router.post("/", authMiddleware, policyMiddleware("role.create"), validateMiddleware(schemaRoleCreate), roleCreate);
-router.put("/:id", authMiddleware, policyMiddleware("role.edit"), validateMiddleware(schemaRoleUpdate), roleUpdate);
+router.post("/", authMiddleware, policyMiddleware("role.create"), validateBody(schemaRoleCreate), roleCreate);
+router.put("/:id", authMiddleware, policyMiddleware("role.edit"), validateBody(schemaRoleUpdate), roleUpdate);
 router.delete("/:id", authMiddleware, policyMiddleware("role.delete"), roleDelete);
-router.post("/assign", authMiddleware, policyMiddleware("role.assign"), validateMiddleware(schemaRoleAssign), roleAssign);
-router.post("/remove", authMiddleware, policyMiddleware("role.remove"), validateMiddleware(schemaRoleAssign), roleRemove);
+router.post("/assign", authMiddleware, policyMiddleware("role.assign"), validateBody(schemaRoleAssign), roleAssign);
+router.post("/remove", authMiddleware, policyMiddleware("role.remove"), validateBody(schemaRoleAssign), roleRemove);
 
-export default router;
+module.exports = router;

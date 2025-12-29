@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { Suspense, useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +10,7 @@ import { RolesTab } from "../tabs/roles";
 import { GroupsTab } from "../tabs/groups";
 import api from "@/lib/api";
 
-export function ManageUserPage() {
+function ManageUserPageContent() {
   const { user, checking, handleLogout } = useAuthGuard();
   const [activeTab, setActiveTab] = useState<"general" | "roles" | "groups">("general");
   const [loadedUser, setLoadedUser] = useState<any>(null);
@@ -27,6 +27,21 @@ export function ManageUserPage() {
     ],
     []
   );
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && tabs.some((t) => t.key === tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, [searchParams, tabs]);
+
+  const handleTabChange = (tabKey: "general" | "roles" | "groups") => {
+    setActiveTab(tabKey);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tabKey);
+    if (userId) params.set("id", userId);
+    window.history.replaceState(null, "", `/users/manage?${params.toString()}`);
+  };
 
   // Fetch user once for all tabs
   useEffect(() => {
@@ -66,7 +81,7 @@ export function ManageUserPage() {
           <Tabs>
             <TabsList className="bg-muted">
               {tabs.map((tab) => (
-                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => setActiveTab(tab.key as any)}>
+                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => handleTabChange(tab.key as any)}>
                   {tab.label}
                 </TabsTrigger>
               ))}
@@ -90,4 +105,16 @@ export function ManageUserPage() {
   );
 }
 
-export default ManageUserPage;
+export default function ManageUserPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      }
+    >
+      <ManageUserPageContent />
+    </Suspense>
+  );
+}

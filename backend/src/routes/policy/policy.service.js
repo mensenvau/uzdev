@@ -1,58 +1,91 @@
-import { prisma } from "../../utils/db.util.js";
+const { queryMany, queryOne } = require("../../utils/db");
 
-export async function fnPolicyList({ limit = 10, page = 1, search = "" }) {
+async function fnPolicyList({ limit = 10, page = 1, search = "" }) {
   const safe_limit = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
   const safe_page = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
-  const skip = (safe_page - 1) * safe_limit;
+  const offset = (safe_page - 1) * safe_limit;
 
-  const where = search
-    ? { OR: [{ name: { contains: search } }, { description: { contains: search } }] }
-    : {};
+  let main_sql = "SELECT * FROM system_policies";
+  let count_sql = "SELECT COUNT(*) as total FROM system_policies";
+  const main_params = [];
+  const count_params = [];
 
-  const [policies, total] = await Promise.all([
-    prisma.policy.findMany({ where, orderBy: { created_at: "desc" }, skip, take: safe_limit }),
-    prisma.policy.count({ where }),
-  ]);
+  if (search) {
+    main_sql += " WHERE name LIKE ? OR description LIKE ?";
+    count_sql += " WHERE name LIKE ? OR description LIKE ?";
+    const search_pattern = `%${search}%`;
+    main_params.push(search_pattern, search_pattern);
+    count_params.push(search_pattern, search_pattern);
+  }
 
-  return { limit: safe_limit, page: safe_page, total, policies };
+  main_sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+  main_params.push(safe_limit, offset);
+
+  const [policies, count_res] = await Promise.all([queryMany(main_sql, main_params), queryMany(count_sql, count_params)]);
+
+  return {
+    limit: safe_limit,
+    page: safe_page,
+    total: count_res[0].total,
+    policies,
+  };
 }
 
-export async function fnPolicyGet(id) {
-  const policy = await prisma.policy.findUnique({ where: { id: Number(id) } });
+async function fnPolicyGet(id) {
+  const policy = await queryOne("SELECT * FROM system_policies WHERE id = ?", [Number(id)]);
   if (!policy) throw new Error("Policy not found");
   return policy;
 }
 
-export async function fnPolicyCreate(name, description) {
-  const policy = await prisma.policy.create({ data: { name, description } });
-  return await fnPolicyGet(policy.id);
+async function fnPolicyCreate(name, description) {
+  const result = await queryMany("INSERT INTO system_policies (name, description) VALUES (?, ?)", [name, description || null]);
+  return await fnPolicyGet(result.insertId);
 }
 
-export async function fnPolicyUpdate(id, { name, description }) {
-  const data = {};
-  if (name !== undefined) data.name = name;
-  if (description !== undefined) data.description = description;
-  if (Object.keys(data).length === 0) throw new Error("No fields to update");
+async function fnPolicyUpdate(id, { name, description }) {
+  const updates = [];
+  const update_params = [];
 
-  await prisma.policy.update({ where: { id: Number(id) }, data });
+  if (name !== undefined) {
+    updates.push("name = ?");
+    update_params.push(name);
+  }
+  if (description !== undefined) {
+    updates.push("description = ?");
+    update_params.push(description);
+  }
+
+  if (updates.length === 0) throw new Error("No fields to update");
+
+  update_params.push(Number(id));
+  await queryMany(`UPDATE system_policies SET ${updates.join(", ")} WHERE id = ?`, update_params);
+
   return await fnPolicyGet(id);
 }
 
-export async function fnPolicyDelete(id) {
-  const deleted = await prisma.policy.delete({ where: { id: Number(id) } }).catch(() => null);
-  if (!deleted) throw new Error("Policy not found");
+async function fnPolicyDelete(id) {
+  const result = await queryMany("DELETE FROM system_policies WHERE id = ?", [Number(id)]);
+  if (result.affectedRows === 0) throw new Error("Policy not found");
   return true;
 }
 
-export async function fnPolicyAssign(role_id, policy_id) {
-  await prisma.rolePolicy.create({
-    data: { role: { connect: { id: Number(role_id) } }, policy: { connect: { id: Number(policy_id) } } },
-  });
+async function fnPolicyAssign(role_id, policy_id) {
+  await queryMany("INSERT INTO system_role_policies (role_id, policy_id) VALUES (?, ?)", [Number(role_id), Number(policy_id)]);
   return true;
 }
 
-export async function fnPolicyRemove(role_id, policy_id) {
-  const removed = await prisma.rolePolicy.deleteMany({ where: { role_id: Number(role_id), policy_id: Number(policy_id) } });
-  if (removed.count === 0) throw new Error("Policy assignment not found");
+async function fnPolicyRemove(role_id, policy_id) {
+  const result = await queryMany("DELETE FROM system_role_policies WHERE role_id = ? AND policy_id = ?", [Number(role_id), Number(policy_id)]);
+  if (result.affectedRows === 0) throw new Error("Policy assignment not found");
   return true;
 }
+
+module.exports = {
+  fnPolicyList,
+  fnPolicyGet,
+  fnPolicyCreate,
+  fnPolicyUpdate,
+  fnPolicyDelete,
+  fnPolicyAssign,
+  fnPolicyRemove,
+};

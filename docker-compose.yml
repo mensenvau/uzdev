@@ -25,11 +25,17 @@ services:
       dockerfile: Dockerfile
     container_name: core-app-backend
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: ${PORT:-3001}
       HOST: ${HOST:-0.0.0.0}
-      DATABASE_URL: mysql://${DB_USER:-root}:${DB_PASSWORD:-rootpassword}@mysql:3306/${DB_NAME:-core_app}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-rootpassword}
+      DB_NAME: ${DB_NAME:-core_app}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-access-secret-key}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-refresh-secret-key}
       JWT_PASSWORD_RESET_SECRET: ${JWT_PASSWORD_RESET_SECRET:-password-reset-secret-key}
@@ -44,7 +50,7 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-noreply@example.com}
     ports:
       - "${PORT:-3001}:3001"
-    command: ["/bin/sh", "-c", "npm run prisma:migrate && npm run prisma:seed && node src/server.js"]
+    command: ["node", "src/server.js"]
     depends_on:
       mysql:
         condition: service_healthy
@@ -57,6 +63,8 @@ services:
       dockerfile: Dockerfile
     container_name: core-app-frontend
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}

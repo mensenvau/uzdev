@@ -1,11 +1,12 @@
-import dotenv from "dotenv";
-import path from "path";
+/**
+ * Environment Variables Utility
+ * Loads environment variables from .env file
+ */
 
-const backend_env_path = path.resolve(process.cwd(), ".env");
-const root_env_path = path.resolve(process.cwd(), "..", ".env");
+require("dotenv").config();
+require("dotenv").config({ path: "../.env" });
 
-// Load backend/.env first, then fall back to repo root .env
-dotenv.config({ path: backend_env_path });
-dotenv.config({ path: root_env_path });
-
-// Nothing to export; importing this file initializes environment variables.
+// Export for verification (optional)
+module.exports = {
+  loaded: true,
+};
