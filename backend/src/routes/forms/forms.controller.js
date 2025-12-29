@@ -6,7 +6,7 @@ const {
   fnGetFormResponses,
   fnGetFormResponsesWithColumns,
 } = require("./forms.service");
-const { getGoogleFormsCredentials } = require("./forms.credentials");
+const { fnGetGoogleFormsCredentials } = require("./forms.credentials");
 
 /**
  * Get list of Google Forms from Drive
@@ -15,8 +15,8 @@ const { getGoogleFormsCredentials } = require("./forms.credentials");
 const formsList = asyncHandler(async (req, res) => {
   const { page_size, page_token } = req.body;
 
-  const credentials = getGoogleFormsCredentials();
-  if (!credentials) {
+  const google_credentials = fnGetGoogleFormsCredentials();
+  if (!google_credentials) {
     return res.status(500).json({
       error: "Google Forms credentials not configured",
       message: "Please add Google API credentials to .env file. See README.md for setup instructions.",
@@ -25,7 +25,7 @@ const formsList = asyncHandler(async (req, res) => {
   }
 
   const result = await fnGetFormsList({
-    credentials,
+    credentials: google_credentials,
     page_size: parseInt(page_size) || 10,
     page_token: page_token || null,
   });
@@ -39,8 +39,8 @@ const formsList = asyncHandler(async (req, res) => {
 const formGet = asyncHandler(async (req, res) => {
   const { form_id } = req.params;
 
-  const credentials = getGoogleFormsCredentials();
-  if (!credentials) {
+  const google_credentials = fnGetGoogleFormsCredentials();
+  if (!google_credentials) {
     return res.status(500).json({
       error: "Google Forms credentials not configured. Please contact administrator."
     });
@@ -51,7 +51,7 @@ const formGet = asyncHandler(async (req, res) => {
   }
 
   const result = await fnGetFormStructure({
-    credentials,
+    credentials: google_credentials,
     form_id,
   });
 
@@ -65,8 +65,8 @@ const formResponses = asyncHandler(async (req, res) => {
   const { page_size, page_token, filters } = req.body;
   const { form_id } = req.params;
 
-  const credentials = getGoogleFormsCredentials();
-  if (!credentials) {
+  const google_credentials = fnGetGoogleFormsCredentials();
+  if (!google_credentials) {
     return res.status(500).json({
       error: "Google Forms credentials not configured. Please contact administrator."
     });
@@ -77,7 +77,7 @@ const formResponses = asyncHandler(async (req, res) => {
   }
 
   const result = await fnGetFormResponses({
-    credentials,
+    credentials: google_credentials,
     form_id,
     page_size: parseInt(page_size) || 100,
     page_token: page_token || null,
@@ -94,8 +94,8 @@ const formResponsesWithColumns = asyncHandler(async (req, res) => {
   const { visible_columns, calculate_columns } = req.body;
   const { form_id } = req.params;
 
-  const credentials = getGoogleFormsCredentials();
-  if (!credentials) {
+  const google_credentials = fnGetGoogleFormsCredentials();
+  if (!google_credentials) {
     return res.status(500).json({
       error: "Google Forms credentials not configured. Please contact administrator."
     });
@@ -106,7 +106,7 @@ const formResponsesWithColumns = asyncHandler(async (req, res) => {
   }
 
   const result = await fnGetFormResponsesWithColumns({
-    credentials,
+    credentials: google_credentials,
     form_id,
     visible_columns: visible_columns || [],
     calculate_columns: calculate_columns || [],
@@ -122,8 +122,8 @@ const formResponsesWithColumns = asyncHandler(async (req, res) => {
 const formGetPublic = asyncHandler(async (req, res) => {
   const { form_id } = req.params;
 
-  const credentials = getGoogleFormsCredentials();
-  if (!credentials) {
+  const google_credentials = fnGetGoogleFormsCredentials();
+  if (!google_credentials) {
     return res.status(500).json({
       error: "Google Forms credentials not configured. Please contact administrator."
     });
@@ -134,7 +134,7 @@ const formGetPublic = asyncHandler(async (req, res) => {
   }
 
   const result = await fnGetFormStructure({
-    credentials,
+    credentials: google_credentials,
     form_id,
   });
 
@@ -148,8 +148,8 @@ const formSubmitPublic = asyncHandler(async (req, res) => {
   const { form_id } = req.params;
   const { answers } = req.body;
 
-  const credentials = getGoogleFormsCredentials();
-  if (!credentials) {
+  const google_credentials = fnGetGoogleFormsCredentials();
+  if (!google_credentials) {
     return res.status(500).json({
       error: "Google Forms credentials not configured. Please contact administrator."
     });
