@@ -20,16 +20,11 @@ export default function Home() {
     try {
       setLoading(true);
       const credentials = getCredentials();
-      if (!credentials) {
-        setLoading(false);
-        return;
-      }
 
       const response = await listForms(credentials, 30, null);
       setForms(response.forms);
     } catch (error: any) {
       console.error("Failed to fetch forms:", error);
-      toast.error("Failed to load forms");
     } finally {
       setLoading(false);
     }

@@ -62,7 +62,7 @@ INSERT INTO `system_policies` (`name`, `description`) VALUES
 ('group.assign', 'Add users to groups'),
 ('group.remove', 'Remove users from groups'),
 
--- Form Policies
+-- Form Policies (Dynamic Forms System)
 ('form.list', 'List all forms'),
 ('form.get', 'Get form details'),
 ('form.create', 'Create new forms'),
@@ -75,6 +75,12 @@ INSERT INTO `system_policies` (`name`, `description`) VALUES
 ('form.add_access', 'Add form access rules'),
 ('form.public_link', 'Generate public form links'),
 ('form.response_detail', 'View form response details'),
+
+-- Google Forms Integration Policies
+('forms.list', 'List Google Forms from Drive'),
+('forms.view', 'View Google Form structure'),
+('forms.view_responses', 'View Google Form responses'),
+('forms.manage_access', 'Manage Google Form access settings'),
 
 -- Self Management Policies
 ('me.get', 'Get own profile'),
@@ -112,7 +118,10 @@ WHERE name IN (
   'me.edit',
   'form.list',
   'form.get',
-  'form.submit'
+  'form.submit',
+  'forms.list',
+  'forms.view',
+  'forms.view_responses'
 );
 
 -- GUEST ROLE: Minimal permissions

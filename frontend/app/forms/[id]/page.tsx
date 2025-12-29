@@ -68,18 +68,11 @@ export default function FormDetailPage() {
         setError(null);
 
         const credentials = getCredentials();
-
-        if (!credentials) {
-          setError("Google Forms credentials not configured. Please contact administrator.");
-          return;
-        }
-
         const response = await getFormStructure(form_id, credentials);
         setForm(response.form);
       } catch (err: any) {
         console.error("Failed to fetch form:", err);
         setError(err.response?.data?.message || "Failed to fetch form. Please try again.");
-        toast.error("Failed to fetch form");
       } finally {
         setLoading(false);
       }
@@ -95,17 +88,11 @@ export default function FormDetailPage() {
       setLoadingResponses(true);
       const credentials = getCredentials();
 
-      if (!credentials) {
-        toast.error("Google Forms credentials not configured");
-        return;
-      }
-
       const response = await getFormResponses(form_id, credentials);
       setResponses(response.data.responses || []);
       toast.success(`Loaded ${response.data.responses?.length || 0} responses`);
     } catch (err: any) {
       console.error("Failed to fetch responses:", err);
-      toast.error("Failed to fetch responses");
     } finally {
       setLoadingResponses(false);
     }

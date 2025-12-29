@@ -24,21 +24,13 @@ export default function FormsListPage() {
       setLoading(true);
       setError(null);
 
-      // Get credentials (this should be implemented based on your auth flow)
       const credentials = getCredentials();
-
-      if (!credentials) {
-        setError("Google Forms credentials not configured. Please contact administrator.");
-        return;
-      }
-
       const response = await listForms(credentials, 20, pageToken);
       setForms(pageToken ? [...forms, ...response.forms] : response.forms);
       setNextPageToken(response.next_page_token);
     } catch (err: any) {
       console.error("Failed to fetch forms:", err);
       setError(err.response?.data?.message || "Failed to fetch forms. Please try again.");
-      toast.error("Failed to fetch forms");
     } finally {
       setLoading(false);
     }
