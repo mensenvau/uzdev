@@ -62,6 +62,7 @@ export interface GoogleForm {
 export interface FormsListResponse {
   forms: GoogleForm[];
   next_page_token: string | null;
+  service_account_email?: string;
 }
 
 // Get credentials from environment or backend

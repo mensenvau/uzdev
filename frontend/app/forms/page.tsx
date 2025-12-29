@@ -18,6 +18,7 @@ export default function FormsListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [serviceAccountEmail, setServiceAccountEmail] = useState<string | null>(null);
 
   const fetchForms = async (pageToken: string | null = null) => {
     try {
@@ -28,6 +29,7 @@ export default function FormsListPage() {
       const response = await listForms(credentials, 20, pageToken);
       setForms(pageToken ? [...forms, ...response.forms] : response.forms);
       setNextPageToken(response.next_page_token);
+      setServiceAccountEmail(response.service_account_email || null);
     } catch (err: any) {
       console.error("Failed to fetch forms:", err);
       setError(err.response?.data?.message || "Failed to fetch forms. Please try again.");
@@ -108,10 +110,21 @@ export default function FormsListPage() {
             )}
 
             {!loading && forms.length === 0 && !error && (
-              <div className="text-center py-12">
+              <div className="text-center py-12 space-y-4">
                 <p className="text-muted-foreground">
-                  No forms found. Create a form in Google Forms to get started.
+                  No forms found.
                 </p>
+                {serviceAccountEmail && (
+                  <div className="max-w-2xl mx-auto bg-muted/50 p-4 rounded-lg text-sm text-left space-y-2">
+                    <p className="font-medium">To see your Google Forms here:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                      <li>Open your Google Form</li>
+                      <li>Click the "Send" button</li>
+                      <li>Click the "Add editor" icon</li>
+                      <li>Add this email: <code className="bg-background px-2 py-0.5 rounded text-xs">{serviceAccountEmail}</code></li>
+                    </ol>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

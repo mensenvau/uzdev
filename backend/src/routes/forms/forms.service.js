@@ -73,12 +73,32 @@ async function fnGetFormsList({ credentials, page_size = 10, page_token = null }
       orderBy: "modifiedTime desc",
     });
 
+    const forms = response.data.files || [];
+
+    // Log service account info for debugging
+    const service_account_email = credentials.client_email || "unknown";
+    console.log(`✓ Forms query successful. Found ${forms.length} forms accessible to ${service_account_email}`);
+
+    if (forms.length === 0) {
+      console.warn("⚠ No forms found. Make sure Google Forms are shared with:", service_account_email);
+      console.warn("  1. Open your Google Form");
+      console.warn("  2. Click 'Send' button");
+      console.warn("  3. Add this email as an editor:", service_account_email);
+    }
+
     return {
-      forms: response.data.files || [],
+      forms,
       next_page_token: response.data.nextPageToken || null,
+      service_account_email,
     };
   } catch (error) {
-    console.error("Error fetching Google Forms list:", error);
+    console.error("Error fetching Google Forms list:", error.message);
+
+    // Check if API not enabled
+    if (error.message.includes("has not been used") || error.message.includes("is disabled")) {
+      throw new Error("Google Drive API is not enabled. Please enable it in Google Cloud Console.");
+    }
+
     throw new Error(`Failed to fetch Google Forms: ${error.message}`);
   }
 }
