@@ -18,7 +18,9 @@ const formsList = asyncHandler(async (req, res) => {
   const credentials = getGoogleFormsCredentials();
   if (!credentials) {
     return res.status(500).json({
-      error: "Google Forms credentials not configured. Please contact administrator."
+      error: "Google Forms credentials not configured",
+      message: "Please add Google API credentials to .env file. See README.md for setup instructions.",
+      setup_url: "https://console.cloud.google.com"
     });
   }
 

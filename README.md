@@ -130,6 +130,40 @@ Module pattern:
 
 The application now supports integration with Google Forms API to fetch forms and responses from Google Drive.
 
+### Quick Start (Google Forms)
+
+If you're seeing "Google Forms credentials not configured" error:
+
+1. **Create .env file** (if not exists):
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Get Google Service Account** (easiest method):
+   - Visit https://console.cloud.google.com
+   - Create new project → Enable "Google Forms API" and "Google Drive API"
+   - Go to "IAM & Admin" → "Service Accounts" → "Create Service Account"
+   - Click on created account → "Keys" tab → "Add Key" → "Create new key" → JSON
+   - Download the JSON file
+
+3. **Add to .env**:
+   ```bash
+   # Option A: File path
+   GOOGLE_SERVICE_ACCOUNT_PATH=/absolute/path/to/downloaded-key.json
+
+   # Option B: Direct JSON (copy-paste entire file content)
+   GOOGLE_SERVICE_ACCOUNT_JSON='{"type":"service_account","project_id":"...",...}'
+   ```
+
+4. **Share your Google Forms** with service account email:
+   - Open your Google Form
+   - Click "Send" → Click link icon → Copy link
+   - Open Google Drive, find the form
+   - Right-click → Share → Add the service account email (from JSON: `client_email`)
+   - Give "Editor" or "Viewer" access
+
+5. **Restart backend** and refresh the forms page!
+
 ### Setup Google Forms API
 
 **Option 1: Service Account JSON File (Recommended)**

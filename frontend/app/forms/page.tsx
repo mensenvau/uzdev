@@ -77,7 +77,15 @@ export default function FormsListPage() {
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              <p className="font-medium mb-1">{error}</p>
+              {error.includes("credentials not configured") && (
+                <p className="text-xs mt-2">
+                  Setup instructions: Add Google API credentials to backend .env file.
+                  See README.md for detailed setup guide.
+                </p>
+              )}
+            </AlertDescription>
           </Alert>
         )}
 
