@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Calendar, Clock, CheckSquare, ListChecked, Star, AlignLeft } from "lucide-react";
+import { FileText, Calendar, Clock, CheckSquare, List, Star, AlignLeft } from "lucide-react";
 
 interface FormField {
   field_id: string;
@@ -57,7 +57,7 @@ const getFieldIcon = (field_type: string) => {
       return <FileText className="h-4 w-4" />;
     case "radio":
     case "select":
-      return <ListChecked className="h-4 w-4" />;
+      return <List className="h-4 w-4" />;
     case "checkbox":
       return <CheckSquare className="h-4 w-4" />;
     case "date":
