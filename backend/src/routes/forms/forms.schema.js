@@ -23,17 +23,17 @@ const credentialsSchema = z.union([
   }),
 ]);
 
-const googleFormsListSchema = z.object({
+const formsListSchema = z.object({
   credentials: credentialsSchema,
   page_size: z.number().int().positive().max(100).optional(),
   page_token: z.string().optional().nullable(),
 });
 
-const googleFormGetSchema = z.object({
+const formGetSchema = z.object({
   credentials: credentialsSchema,
 });
 
-const googleFormResponsesSchema = z.object({
+const formResponsesSchema = z.object({
   credentials: credentialsSchema,
   page_size: z.number().int().positive().max(1000).optional(),
   page_token: z.string().optional().nullable(),
@@ -51,15 +51,15 @@ const calculatedColumnSchema = z.object({
   separator: z.string().optional(), // For concat type
 });
 
-const googleFormResponsesWithColumnsSchema = z.object({
+const formResponsesWithColumnsSchema = z.object({
   credentials: credentialsSchema,
   visible_columns: z.array(z.string()).optional(),
   calculate_columns: z.array(calculatedColumnSchema).optional(),
 });
 
 module.exports = {
-  googleFormsListSchema,
-  googleFormGetSchema,
-  googleFormResponsesSchema,
-  googleFormResponsesWithColumnsSchema,
+  formsListSchema,
+  formGetSchema,
+  formResponsesSchema,
+  formResponsesWithColumnsSchema,
 };

@@ -61,7 +61,7 @@ function createGoogleDriveClient(credentials) {
 /**
  * Get list of Google Forms from user's Drive
  */
-async function fnGetGoogleFormsList({ credentials, page_size = 10, page_token = null }) {
+async function fnGetFormsList({ credentials, page_size = 10, page_token = null }) {
   try {
     const drive = createGoogleDriveClient(credentials);
 
@@ -86,7 +86,7 @@ async function fnGetGoogleFormsList({ credentials, page_size = 10, page_token = 
 /**
  * Get a specific Google Form structure
  */
-async function fnGetGoogleFormStructure({ credentials, form_id }) {
+async function fnGetFormStructure({ credentials, form_id }) {
   try {
     const forms = createGoogleFormsClient(credentials);
 
@@ -161,12 +161,12 @@ async function fnGetGoogleFormStructure({ credentials, form_id }) {
 /**
  * Get responses from a Google Form
  */
-async function fnGetGoogleFormResponses({ credentials, form_id, page_size = 100, page_token = null, filters = {} }) {
+async function fnGetFormResponses({ credentials, form_id, page_size = 100, page_token = null, filters = {} }) {
   try {
     const forms = createGoogleFormsClient(credentials);
 
     // Get form structure first to understand the fields
-    const formStructure = await fnGetGoogleFormStructure({ credentials, form_id });
+    const form_structure = await fnGetFormStructure({ credentials, form_id });
 
     // Get responses
     const response = await forms.forms.responses.list({
@@ -190,12 +190,12 @@ async function fnGetGoogleFormResponses({ credentials, form_id, page_size = 100,
       };
 
       if (resp.answers) {
-        for (const [questionId, answer] of Object.entries(resp.answers)) {
-          const field = formStructure.fields.find((f) => f.field_id === questionId);
+        for (const [question_id, answer] of Object.entries(resp.answers)) {
+          const field = form_structure.fields.find((f) => f.field_id === question_id);
 
           const formatted_answer = {
-            field_id: questionId,
-            label: field?.label || questionId,
+            field_id: question_id,
+            label: field?.label || question_id,
             field_type: field?.field_type || "unknown",
             value: null,
           };
@@ -217,7 +217,7 @@ async function fnGetGoogleFormResponses({ credentials, form_id, page_size = 100,
 
     return {
       form_id,
-      form_title: formStructure.title,
+      form_title: form_structure.title,
       responses: formatted_responses,
       next_page_token: response.data.nextPageToken || null,
       total_count: formatted_responses.length,
@@ -231,9 +231,9 @@ async function fnGetGoogleFormResponses({ credentials, form_id, page_size = 100,
 /**
  * Get responses with column visibility settings
  */
-async function fnGetGoogleFormResponsesWithColumns({ credentials, form_id, visible_columns = [], calculate_columns = [] }) {
+async function fnGetFormResponsesWithColumns({ credentials, form_id, visible_columns = [], calculate_columns = [] }) {
   try {
-    const result = await fnGetGoogleFormResponses({ credentials, form_id });
+    const result = await fnGetFormResponses({ credentials, form_id });
 
     // Apply column visibility filter
     if (visible_columns.length > 0) {
@@ -297,8 +297,8 @@ async function fnGetGoogleFormResponsesWithColumns({ credentials, form_id, visib
 }
 
 module.exports = {
-  fnGetGoogleFormsList,
-  fnGetGoogleFormStructure,
-  fnGetGoogleFormResponses,
-  fnGetGoogleFormResponsesWithColumns,
+  fnGetFormsList,
+  fnGetFormStructure,
+  fnGetFormResponses,
+  fnGetFormResponsesWithColumns,
 };

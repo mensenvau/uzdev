@@ -151,7 +151,7 @@ The application now supports integration with Google Forms API to fetch forms an
 
 **List all Google Forms:**
 ```bash
-POST /api/google-forms/list
+POST /api/forms/list
 {
   "credentials": { /* service account JSON or OAuth tokens */ },
   "page_size": 10,
@@ -161,7 +161,7 @@ POST /api/google-forms/list
 
 **Get form structure:**
 ```bash
-POST /api/google-forms/:form_id
+POST /api/forms/:form_id
 {
   "credentials": { /* credentials */ }
 }
@@ -169,7 +169,7 @@ POST /api/google-forms/:form_id
 
 **Get form responses:**
 ```bash
-POST /api/google-forms/:form_id/responses
+POST /api/forms/:form_id/responses
 {
   "credentials": { /* credentials */ },
   "page_size": 100
@@ -178,7 +178,7 @@ POST /api/google-forms/:form_id/responses
 
 **Get responses with column visibility and calculated columns:**
 ```bash
-POST /api/google-forms/:form_id/responses/columns
+POST /api/forms/:form_id/responses/columns
 {
   "credentials": { /* credentials */ },
   "visible_columns": ["question_id_1", "question_id_2"],
@@ -403,7 +403,7 @@ curl http://localhost:3001/api/forms \
 
 ```bash
 # Test with service account credentials
-curl -X POST http://localhost:3001/api/google-forms/list \
+curl -X POST http://localhost:3001/api/forms/list \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

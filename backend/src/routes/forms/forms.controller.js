@@ -1,36 +1,36 @@
 const { asyncHandler } = require("../../utils/async.util");
 const { sendSuccess } = require("../../utils/response.util");
 const {
-  fnGetGoogleFormsList,
-  fnGetGoogleFormStructure,
-  fnGetGoogleFormResponses,
-  fnGetGoogleFormResponsesWithColumns,
-} = require("./google-forms.service");
+  fnGetFormsList,
+  fnGetFormStructure,
+  fnGetFormResponses,
+  fnGetFormResponsesWithColumns,
+} = require("./forms.service");
 
 /**
  * Get list of Google Forms from Drive
  * Expects credentials in request body (service account JSON or OAuth tokens)
  */
-const googleFormsList = asyncHandler(async (req, res) => {
+const formsList = asyncHandler(async (req, res) => {
   const { credentials, page_size, page_token } = req.body;
 
   if (!credentials) {
     return res.status(400).json({ error: "Credentials are required" });
   }
 
-  const result = await fnGetGoogleFormsList({
+  const result = await fnGetFormsList({
     credentials,
     page_size: parseInt(page_size) || 10,
     page_token: page_token || null,
   });
 
-  sendSuccess(res, result, "Google Forms fetched successfully");
+  sendSuccess(res, result, "Forms fetched successfully");
 });
 
 /**
  * Get a specific Google Form structure
  */
-const googleFormGet = asyncHandler(async (req, res) => {
+const formGet = asyncHandler(async (req, res) => {
   const { credentials } = req.body;
   const { form_id } = req.params;
 
@@ -42,7 +42,7 @@ const googleFormGet = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Form ID is required" });
   }
 
-  const result = await fnGetGoogleFormStructure({
+  const result = await fnGetFormStructure({
     credentials,
     form_id,
   });
@@ -53,7 +53,7 @@ const googleFormGet = asyncHandler(async (req, res) => {
 /**
  * Get responses from a Google Form
  */
-const googleFormResponses = asyncHandler(async (req, res) => {
+const formResponses = asyncHandler(async (req, res) => {
   const { credentials, page_size, page_token, filters } = req.body;
   const { form_id } = req.params;
 
@@ -65,7 +65,7 @@ const googleFormResponses = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Form ID is required" });
   }
 
-  const result = await fnGetGoogleFormResponses({
+  const result = await fnGetFormResponses({
     credentials,
     form_id,
     page_size: parseInt(page_size) || 100,
@@ -79,7 +79,7 @@ const googleFormResponses = asyncHandler(async (req, res) => {
 /**
  * Get responses with column visibility and calculated columns
  */
-const googleFormResponsesWithColumns = asyncHandler(async (req, res) => {
+const formResponsesWithColumns = asyncHandler(async (req, res) => {
   const { credentials, visible_columns, calculate_columns } = req.body;
   const { form_id } = req.params;
 
@@ -91,7 +91,7 @@ const googleFormResponsesWithColumns = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: "Form ID is required" });
   }
 
-  const result = await fnGetGoogleFormResponsesWithColumns({
+  const result = await fnGetFormResponsesWithColumns({
     credentials,
     form_id,
     visible_columns: visible_columns || [],
@@ -102,8 +102,8 @@ const googleFormResponsesWithColumns = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  googleFormsList,
-  googleFormGet,
-  googleFormResponses,
-  googleFormResponsesWithColumns,
+  formsList,
+  formGet,
+  formResponses,
+  formResponsesWithColumns,
 };
