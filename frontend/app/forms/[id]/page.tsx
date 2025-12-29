@@ -89,8 +89,8 @@ export default function FormDetailPage() {
       const credentials = getCredentials();
 
       const response = await getFormResponses(form_id, credentials);
-      setResponses(response.data.responses || []);
-      toast.success(`Loaded ${response.data.responses?.length || 0} responses`);
+      setResponses(response.responses || []);
+      toast.success(`Loaded ${response.responses?.length || 0} responses`);
     } catch (err: any) {
       console.error("Failed to fetch responses:", err);
     } finally {
