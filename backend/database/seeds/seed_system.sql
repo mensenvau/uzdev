@@ -78,6 +78,7 @@ INSERT INTO `system_policies` (`name`, `description`) VALUES
 
 -- Google Forms Integration Policies
 ('forms.list', 'List Google Forms from Drive'),
+('forms.get', 'Get Google Form structure'),
 ('forms.view', 'View Google Form structure'),
 ('forms.view_responses', 'View Google Form responses'),
 ('forms.manage_access', 'Manage Google Form access settings'),
@@ -120,6 +121,7 @@ WHERE name IN (
   'form.get',
   'form.submit',
   'forms.list',
+  'forms.get',
   'forms.view',
   'forms.view_responses'
 );

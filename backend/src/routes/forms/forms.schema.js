@@ -23,16 +23,16 @@ const credentialsSchema = z.union([
   }),
 ]);
 
-const formsListSchema = z.object({
+const schemaFormsList = z.object({
   page_size: z.number().int().positive().max(100).optional(),
   page_token: z.string().optional().nullable(),
 });
 
-const formGetSchema = z.object({
+const schemaFormGet = z.object({
   form_id: z.string().min(1, "Form ID is required"),
 });
 
-const formResponsesSchema = z.object({
+const schemaFormResponses = z.object({
   form_id: z.string().min(1, "Form ID is required"),
   page_size: z.number().int().positive().max(1000).optional(),
   page_token: z.string().optional().nullable(),
@@ -43,22 +43,22 @@ const formResponsesSchema = z.object({
     .optional(),
 });
 
-const calculatedColumnSchema = z.object({
+const schemaCalculatedColumn = z.object({
   name: z.string(),
   type: z.enum(["sum", "concat", "count", "average"]),
   fields: z.array(z.string()),
-  separator: z.string().optional(), // For concat type
+  separator: z.string().optional(),
 });
 
-const formResponsesWithColumnsSchema = z.object({
+const schemaFormResponsesWithColumns = z.object({
   form_id: z.string().min(1, "Form ID is required"),
   visible_columns: z.array(z.string()).optional(),
-  calculate_columns: z.array(calculatedColumnSchema).optional(),
+  calculate_columns: z.array(schemaCalculatedColumn).optional(),
 });
 
 module.exports = {
-  formsListSchema,
-  formGetSchema,
-  formResponsesSchema,
-  formResponsesWithColumnsSchema,
+  schemaFormsList,
+  schemaFormGet,
+  schemaFormResponses,
+  schemaFormResponsesWithColumns,
 };

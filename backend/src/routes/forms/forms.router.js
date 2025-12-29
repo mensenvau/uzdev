@@ -3,10 +3,10 @@ const { authMiddleware } = require("../../middlewares/auth.middleware");
 const { policyMiddleware } = require("../../middlewares/policy.middleware");
 const { validateBody, validateParams } = require("../../middlewares/validate.middleware");
 const {
-  formsListSchema,
-  formGetSchema,
-  formResponsesSchema,
-  formResponsesWithColumnsSchema,
+  schemaFormsList,
+  schemaFormGet,
+  schemaFormResponses,
+  schemaFormResponsesWithColumns,
 } = require("./forms.schema");
 const {
   formsList,
@@ -19,15 +19,15 @@ const {
 
 const router = express.Router();
 
-router.post("/public/:form_id", validateParams(formGetSchema), formGetPublic);
+router.post("/public/:form_id", validateParams(schemaFormGet), formGetPublic);
 router.post("/public/:form_id/submit", formSubmitPublic);
 
-router.post("/list", authMiddleware, policyMiddleware("forms.list"), validateBody(formsListSchema), formsList);
+router.post("/list", authMiddleware, policyMiddleware("forms.list"), validateBody(schemaFormsList), formsList);
 
-router.post("/:form_id", authMiddleware, policyMiddleware("forms.view"), validateParams(formGetSchema), formGet);
+router.post("/:form_id", authMiddleware, policyMiddleware("forms.get"), validateParams(schemaFormGet), formGet);
 
-router.post("/:form_id/responses", authMiddleware, policyMiddleware("forms.view_responses"), validateParams(formResponsesSchema), validateBody(formResponsesSchema), formResponses);
+router.post("/:form_id/responses", authMiddleware, policyMiddleware("forms.view_responses"), validateParams(schemaFormResponses), validateBody(schemaFormResponses), formResponses);
 
-router.post("/:form_id/responses/columns", authMiddleware, policyMiddleware("forms.view_responses"), validateParams(formResponsesWithColumnsSchema), validateBody(formResponsesWithColumnsSchema), formResponsesWithColumns);
+router.post("/:form_id/responses/columns", authMiddleware, policyMiddleware("forms.view_responses"), validateParams(schemaFormResponsesWithColumns), validateBody(schemaFormResponsesWithColumns), formResponsesWithColumns);
 
 module.exports = router;

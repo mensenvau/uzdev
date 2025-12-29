@@ -298,49 +298,87 @@ export default function FormDetailPage() {
           </TabsContent>
 
           <TabsContent value="settings" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Form Settings</CardTitle>
-                <CardDescription>
-                  Configure access and sharing settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h3 className="font-medium">Public Access</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Anyone with the link can fill this form
-                      </p>
+            <Tabs defaultValue="general" className="w-full">
+              <TabsList>
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="groups">Group Access</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="general" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>General Settings</CardTitle>
+                    <CardDescription>
+                      Configure basic form settings
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <h3 className="font-medium">Public Access</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Anyone with the link can fill this form
+                          </p>
+                        </div>
+                        <Button variant="outline" onClick={copyPublicLink}>
+                          Copy Link
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <h3 className="font-medium">Form ID</h3>
+                          <p className="text-sm text-muted-foreground font-mono">
+                            {form_id}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <h3 className="font-medium">Open in Google Forms</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Edit this form in Google Forms
+                          </p>
+                        </div>
+                        <Button variant="outline" onClick={openInGoogle}>
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Open
+                        </Button>
+                      </div>
                     </div>
-                    <Button variant="outline" onClick={copyPublicLink}>
-                      Copy Link
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <h3 className="font-medium">Form ID</h3>
-                      <p className="text-sm text-muted-foreground font-mono">
-                        {form_id}
-                      </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="groups" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Group Access</CardTitle>
+                    <CardDescription>
+                      Manage which groups can access this form
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          Assign this form to specific user groups to control access
+                        </p>
+                        <Button variant="outline" size="sm">
+                          Add Group
+                        </Button>
+                      </div>
+                      <div className="border rounded-lg p-8 text-center">
+                        <p className="text-muted-foreground mb-2">No groups assigned</p>
+                        <p className="text-xs text-muted-foreground">
+                          Click "Add Group" to assign this form to groups
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-4 border rounded-lg bg-muted/50">
-                    <h3 className="font-medium mb-2">Group Access</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Share this form with specific groups to control who can access it
-                    </p>
-                    <Button variant="outline" size="sm">
-                      Manage Group Access
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Coming soon: Assign forms to user groups
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </div>
