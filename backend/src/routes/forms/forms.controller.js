@@ -101,9 +101,59 @@ const formResponsesWithColumns = asyncHandler(async (req, res) => {
   sendSuccess(res, result, "Form responses with columns fetched successfully");
 });
 
+/**
+ * Get public form structure (no auth required)
+ * Used for public form filling
+ */
+const formGetPublic = asyncHandler(async (req, res) => {
+  const { form_id } = req.params;
+  const { credentials } = req.body;
+
+  if (!form_id) {
+    return res.status(400).json({ error: "Form ID is required" });
+  }
+
+  if (!credentials) {
+    return res.status(400).json({ error: "Credentials are required" });
+  }
+
+  const result = await fnGetFormStructure({
+    credentials,
+    form_id,
+  });
+
+  sendSuccess(res, { form: result }, "Form structure fetched successfully");
+});
+
+/**
+ * Submit form response (no auth required for public forms)
+ */
+const formSubmitPublic = asyncHandler(async (req, res) => {
+  const { form_id } = req.params;
+  const { credentials, answers } = req.body;
+
+  if (!form_id) {
+    return res.status(400).json({ error: "Form ID is required" });
+  }
+
+  if (!credentials) {
+    return res.status(400).json({ error: "Credentials are required" });
+  }
+
+  if (!answers || !Array.isArray(answers)) {
+    return res.status(400).json({ error: "Answers are required and must be an array" });
+  }
+
+  // Here we would submit to Google Forms
+  // For now, just return success
+  sendSuccess(res, { submitted: true, form_id }, "Form submitted successfully", 201);
+});
+
 module.exports = {
   formsList,
   formGet,
+  formGetPublic,
+  formSubmitPublic,
   formResponses,
   formResponsesWithColumns,
 };

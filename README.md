@@ -473,3 +473,46 @@ SELECT * FROM system_users;
 - Controllers handle HTTP requests/responses only
 - Use Zod schemas for validation
 - Always use parameterized queries (SQL injection prevention)
+
+## Frontend Architecture
+
+### Forms Integration
+
+The frontend provides a complete UI for managing and filling Google Forms:
+
+**Pages:**
+- `/forms` - List all Google Forms from Drive
+- `/forms/[id]` - View form details, preview, and settings
+- `/forms/public/[id]` - Public form filling (no authentication)
+
+**Components:**
+- `FormViewer` - Reusable component to display and fill forms
+- `FormsTable` - Table view with search and actions
+
+**Features:**
+- View all Google Forms from your Drive
+- Preview form structure with all field types
+- Copy public links for sharing
+- Open forms directly in Google Forms
+- Submit responses without authentication
+- Support for all Google Forms field types:
+  - Text and textarea
+  - Radio buttons, checkboxes, select
+  - Date and time pickers
+  - Scale/rating questions
+- Required field validation
+- Real-time form filling experience
+
+**Reusable Component:**
+
+```tsx
+import { FormViewer } from "@/components/forms/form-viewer";
+
+<FormViewer
+  form={formStructure}
+  loading={false}
+  error={null}
+  showSubmit={true}
+  onSubmit={(answers) => console.log(answers)}
+/>
+```

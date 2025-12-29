@@ -11,11 +11,17 @@ const {
 const {
   formsList,
   formGet,
+  formGetPublic,
+  formSubmitPublic,
   formResponses,
   formResponsesWithColumns,
 } = require("./forms.controller");
 
 const router = express.Router();
+
+// Public routes (no auth required)
+router.post("/public/:form_id", validateBody(formGetSchema), formGetPublic);
+router.post("/public/:form_id/submit", formSubmitPublic);
 
 // List all Google Forms from Drive
 router.post("/list", authMiddleware, policyMiddleware("forms.list"), validateBody(formsListSchema), formsList);
