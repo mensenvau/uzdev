@@ -6,16 +6,20 @@ const {
   fnGetFormResponses,
   fnGetFormResponsesWithColumns,
 } = require("./forms.service");
+const { getGoogleFormsCredentials } = require("./forms.credentials");
 
 /**
  * Get list of Google Forms from Drive
- * Expects credentials in request body (service account JSON or OAuth tokens)
+ * Uses credentials from environment variables
  */
 const formsList = asyncHandler(async (req, res) => {
-  const { credentials, page_size, page_token } = req.body;
+  const { page_size, page_token } = req.body;
 
+  const credentials = getGoogleFormsCredentials();
   if (!credentials) {
-    return res.status(400).json({ error: "Credentials are required" });
+    return res.status(500).json({
+      error: "Google Forms credentials not configured. Please contact administrator."
+    });
   }
 
   const result = await fnGetFormsList({
@@ -31,11 +35,13 @@ const formsList = asyncHandler(async (req, res) => {
  * Get a specific Google Form structure
  */
 const formGet = asyncHandler(async (req, res) => {
-  const { credentials } = req.body;
   const { form_id } = req.params;
 
+  const credentials = getGoogleFormsCredentials();
   if (!credentials) {
-    return res.status(400).json({ error: "Credentials are required" });
+    return res.status(500).json({
+      error: "Google Forms credentials not configured. Please contact administrator."
+    });
   }
 
   if (!form_id) {
@@ -54,11 +60,14 @@ const formGet = asyncHandler(async (req, res) => {
  * Get responses from a Google Form
  */
 const formResponses = asyncHandler(async (req, res) => {
-  const { credentials, page_size, page_token, filters } = req.body;
+  const { page_size, page_token, filters } = req.body;
   const { form_id } = req.params;
 
+  const credentials = getGoogleFormsCredentials();
   if (!credentials) {
-    return res.status(400).json({ error: "Credentials are required" });
+    return res.status(500).json({
+      error: "Google Forms credentials not configured. Please contact administrator."
+    });
   }
 
   if (!form_id) {
@@ -80,11 +89,14 @@ const formResponses = asyncHandler(async (req, res) => {
  * Get responses with column visibility and calculated columns
  */
 const formResponsesWithColumns = asyncHandler(async (req, res) => {
-  const { credentials, visible_columns, calculate_columns } = req.body;
+  const { visible_columns, calculate_columns } = req.body;
   const { form_id } = req.params;
 
+  const credentials = getGoogleFormsCredentials();
   if (!credentials) {
-    return res.status(400).json({ error: "Credentials are required" });
+    return res.status(500).json({
+      error: "Google Forms credentials not configured. Please contact administrator."
+    });
   }
 
   if (!form_id) {
@@ -107,14 +119,16 @@ const formResponsesWithColumns = asyncHandler(async (req, res) => {
  */
 const formGetPublic = asyncHandler(async (req, res) => {
   const { form_id } = req.params;
-  const { credentials } = req.body;
+
+  const credentials = getGoogleFormsCredentials();
+  if (!credentials) {
+    return res.status(500).json({
+      error: "Google Forms credentials not configured. Please contact administrator."
+    });
+  }
 
   if (!form_id) {
     return res.status(400).json({ error: "Form ID is required" });
-  }
-
-  if (!credentials) {
-    return res.status(400).json({ error: "Credentials are required" });
   }
 
   const result = await fnGetFormStructure({
@@ -130,14 +144,17 @@ const formGetPublic = asyncHandler(async (req, res) => {
  */
 const formSubmitPublic = asyncHandler(async (req, res) => {
   const { form_id } = req.params;
-  const { credentials, answers } = req.body;
+  const { answers } = req.body;
+
+  const credentials = getGoogleFormsCredentials();
+  if (!credentials) {
+    return res.status(500).json({
+      error: "Google Forms credentials not configured. Please contact administrator."
+    });
+  }
 
   if (!form_id) {
     return res.status(400).json({ error: "Form ID is required" });
-  }
-
-  if (!credentials) {
-    return res.status(400).json({ error: "Credentials are required" });
   }
 
   if (!answers || !Array.isArray(answers)) {

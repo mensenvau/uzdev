@@ -24,17 +24,13 @@ const credentialsSchema = z.union([
 ]);
 
 const formsListSchema = z.object({
-  credentials: credentialsSchema,
   page_size: z.number().int().positive().max(100).optional(),
   page_token: z.string().optional().nullable(),
 });
 
-const formGetSchema = z.object({
-  credentials: credentialsSchema,
-});
+const formGetSchema = z.object({});
 
 const formResponsesSchema = z.object({
-  credentials: credentialsSchema,
   page_size: z.number().int().positive().max(1000).optional(),
   page_token: z.string().optional().nullable(),
   filters: z
@@ -52,7 +48,6 @@ const calculatedColumnSchema = z.object({
 });
 
 const formResponsesWithColumnsSchema = z.object({
-  credentials: credentialsSchema,
   visible_columns: z.array(z.string()).optional(),
   calculate_columns: z.array(calculatedColumnSchema).optional(),
 });

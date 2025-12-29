@@ -65,10 +65,12 @@ export interface FormsListResponse {
 }
 
 // Get credentials from environment or backend
+// NOTE: Credentials are now handled by backend from .env file
+// Frontend doesn't need to send credentials anymore
 export const getCredentials = (): GoogleCredentials | null => {
-  // This should ideally be fetched from your backend
-  // For now, return null - implement based on your auth flow
-  return null;
+  // Credentials are handled by backend
+  // Return empty object to indicate credentials are available
+  return {} as GoogleCredentials;
 };
 
 // List all Google Forms
@@ -78,7 +80,6 @@ export const listForms = async (
   page_token: string | null = null
 ): Promise<FormsListResponse> => {
   const response = await api.post("/forms/list", {
-    credentials,
     page_size,
     page_token,
   });
@@ -90,9 +91,7 @@ export const getFormStructure = async (
   form_id: string,
   credentials: GoogleCredentials
 ): Promise<{ form: FormStructure }> => {
-  const response = await api.post(`/forms/${form_id}`, {
-    credentials,
-  });
+  const response = await api.post(`/forms/${form_id}`, {});
   return response.data;
 };
 
@@ -102,9 +101,7 @@ export const getPublicFormStructure = async (
   credentials: GoogleCredentials
 ): Promise<{ form: FormStructure }> => {
   // Use axios directly without auth interceptor
-  const response = await axios.post(`${BASE_URL}/forms/public/${form_id}`, {
-    credentials,
-  });
+  const response = await axios.post(`${BASE_URL}/forms/public/${form_id}`, {});
 
   // Extract data from success wrapper
   if (response.data && typeof response.data === "object" && "data" in response.data) {
@@ -121,7 +118,6 @@ export const submitPublicForm = async (
   answers: Array<{ field_id: string; value: any }>
 ): Promise<{ submitted: boolean; form_id: string }> => {
   const response = await axios.post(`${BASE_URL}/forms/public/${form_id}/submit`, {
-    credentials,
     answers,
   });
 
@@ -140,7 +136,6 @@ export const getFormResponses = async (
   page_token: string | null = null
 ) => {
   const response = await api.post(`/forms/${form_id}/responses`, {
-    credentials,
     page_size,
     page_token,
   });
@@ -160,7 +155,6 @@ export const getFormResponsesWithColumns = async (
   }> = []
 ) => {
   const response = await api.post(`/forms/${form_id}/responses/columns`, {
-    credentials,
     visible_columns,
     calculate_columns,
   });

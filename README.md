@@ -132,28 +132,47 @@ The application now supports integration with Google Forms API to fetch forms an
 
 ### Setup Google Forms API
 
-**Option 1: Service Account (Recommended for server-to-server)**
+**Option 1: Service Account JSON File (Recommended)**
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select existing
 3. Enable Google Forms API and Google Drive API
 4. Create a Service Account and download the JSON key
-5. Share your Google Forms with the service account email
-6. Set `GOOGLE_SERVICE_ACCOUNT_PATH` in `.env` to the path of your JSON key
+5. Share your Google Forms with the service account email (important!)
+6. Save the JSON file and set the path in `.env`:
+   ```
+   GOOGLE_SERVICE_ACCOUNT_PATH=/path/to/service-account.json
+   ```
 
-**Option 2: OAuth2 (For user-specific access)**
+**Option 2: Service Account JSON as Environment Variable**
+
+1. Follow steps 1-5 from Option 1
+2. Copy the entire JSON content and set it in `.env`:
+   ```
+   GOOGLE_SERVICE_ACCOUNT_JSON='{"type":"service_account","project_id":"...","private_key":"...",...}'
+   ```
+
+**Option 3: OAuth2 Tokens (For user-specific access)**
 
 1. Create OAuth2 credentials in Google Cloud Console
 2. Get access token and refresh token
-3. Set `GOOGLE_FORMS_OAUTH_ACCESS_TOKEN` and `GOOGLE_FORMS_OAUTH_REFRESH_TOKEN` in `.env`
+3. Set in `.env`:
+   ```
+   GOOGLE_FORMS_OAUTH_ACCESS_TOKEN=your_access_token
+   GOOGLE_FORMS_OAUTH_REFRESH_TOKEN=your_refresh_token
+   ```
+
+**Security Note:** Credentials are now stored securely on the backend via environment variables. The frontend never sends or handles Google API credentials.
 
 ### Google Forms API Endpoints
+
+All endpoints use credentials from backend environment variables. No credentials needed in request body.
 
 **List all Google Forms:**
 ```bash
 POST /api/forms/list
+Authorization: Bearer YOUR_JWT_TOKEN
 {
-  "credentials": { /* service account JSON or OAuth tokens */ },
   "page_size": 10,
   "page_token": null
 }
@@ -162,16 +181,14 @@ POST /api/forms/list
 **Get form structure:**
 ```bash
 POST /api/forms/:form_id
-{
-  "credentials": { /* credentials */ }
-}
+Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
 **Get form responses:**
 ```bash
 POST /api/forms/:form_id/responses
+Authorization: Bearer YOUR_JWT_TOKEN
 {
-  "credentials": { /* credentials */ },
   "page_size": 100
 }
 ```
@@ -179,8 +196,8 @@ POST /api/forms/:form_id/responses
 **Get responses with column visibility and calculated columns:**
 ```bash
 POST /api/forms/:form_id/responses/columns
+Authorization: Bearer YOUR_JWT_TOKEN
 {
-  "credentials": { /* credentials */ },
   "visible_columns": ["question_id_1", "question_id_2"],
   "calculate_columns": [
     {
@@ -194,6 +211,21 @@ POST /api/forms/:form_id/responses/columns
       "fields": ["first_name", "last_name"],
       "separator": " "
     }
+  ]
+}
+```
+
+**Public endpoints (no authentication required):**
+```bash
+# Get public form structure
+POST /api/forms/public/:form_id
+
+# Submit form response
+POST /api/forms/public/:form_id/submit
+{
+  "answers": [
+    { "field_id": "question_1", "value": "Answer 1" },
+    { "field_id": "question_2", "value": "Answer 2" }
   ]
 }
 ```
@@ -402,19 +434,19 @@ curl http://localhost:3001/api/forms \
 **Testing Google Forms Integration:**
 
 ```bash
-# Test with service account credentials
+# First, ensure credentials are set in .env file
+# GOOGLE_SERVICE_ACCOUNT_PATH=/path/to/service-account.json
+# or GOOGLE_SERVICE_ACCOUNT_JSON='{"type":"service_account",...}'
+
+# Test list forms (requires authentication)
 curl -X POST http://localhost:3001/api/forms/list \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
-    "credentials": {
-      "type": "service_account",
-      "project_id": "...",
-      "private_key": "...",
-      "client_email": "..."
-    },
-    "page_size": 10
-  }'
+  -d '{"page_size": 10}'
+
+# Test public form access (no authentication required)
+curl -X POST http://localhost:3001/api/forms/public/YOUR_FORM_ID \
+  -H "Content-Type: application/json"
 ```
 
 ### Debugging
