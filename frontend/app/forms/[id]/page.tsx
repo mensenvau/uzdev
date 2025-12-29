@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/tabs";
 import { PreviewTab } from "./_tabs/preview";
 import { DataTab } from "./_tabs/data";
-import { ManageTab } from "./_tabs/manage";
+import { SettingsTab } from "./_tabs/settings";
+import { AccessTab } from "./_tabs/access";
 
 interface FormResponse {
   response_id: string;
@@ -84,7 +85,7 @@ export default function FormDetailPage() {
   };
 
   useEffect(() => {
-    if (activeTab === "responses" && responses.length === 0) {
+    if (activeTab === "data" && responses.length === 0) {
       fetchResponses();
     }
   }, [activeTab]);
@@ -177,15 +178,16 @@ export default function FormDetailPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList>
             <TabsTrigger value="preview">Preview</TabsTrigger>
-            <TabsTrigger value="responses">Responses</TabsTrigger>
+            <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="access">Access</TabsTrigger>
           </TabsList>
 
           <TabsContent value="preview" className="mt-6">
             <PreviewTab form={form} loading={loading} error={error} />
           </TabsContent>
 
-          <TabsContent value="responses" className="mt-6">
+          <TabsContent value="data" className="mt-6">
             <DataTab
               form={form}
               responses={responses}
@@ -196,11 +198,15 @@ export default function FormDetailPage() {
           </TabsContent>
 
           <TabsContent value="settings" className="mt-6">
-            <ManageTab
+            <SettingsTab
               form_id={form_id}
               on_copy_public_link={copyPublicLink}
               on_open_in_google={openInGoogle}
             />
+          </TabsContent>
+
+          <TabsContent value="access" className="mt-6">
+            <AccessTab form_id={form_id} />
           </TabsContent>
         </Tabs>
       </div>
