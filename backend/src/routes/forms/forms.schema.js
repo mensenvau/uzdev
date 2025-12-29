@@ -28,9 +28,12 @@ const formsListSchema = z.object({
   page_token: z.string().optional().nullable(),
 });
 
-const formGetSchema = z.object({});
+const formGetSchema = z.object({
+  form_id: z.string().min(1, "Form ID is required"),
+});
 
 const formResponsesSchema = z.object({
+  form_id: z.string().min(1, "Form ID is required"),
   page_size: z.number().int().positive().max(1000).optional(),
   page_token: z.string().optional().nullable(),
   filters: z
@@ -48,6 +51,7 @@ const calculatedColumnSchema = z.object({
 });
 
 const formResponsesWithColumnsSchema = z.object({
+  form_id: z.string().min(1, "Form ID is required"),
   visible_columns: z.array(z.string()).optional(),
   calculate_columns: z.array(calculatedColumnSchema).optional(),
 });

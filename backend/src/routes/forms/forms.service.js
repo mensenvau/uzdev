@@ -1,15 +1,9 @@
 const { google } = require("googleapis");
 
-/**
- * Creates a Google Forms API client using service account or OAuth credentials
- * @param {Object} credentials - Google API credentials
- * @returns {Object} - Google Forms API client
- */
 function createGoogleFormsClient(credentials) {
   let auth;
 
   if (credentials.type === "service_account") {
-    // Service Account authentication
     auth = new google.auth.GoogleAuth({
       credentials,
       scopes: [
@@ -19,13 +13,12 @@ function createGoogleFormsClient(credentials) {
       ],
     });
   } else if (credentials.access_token) {
-    // OAuth2 token authentication
-    const oauth2Client = new google.auth.OAuth2();
-    oauth2Client.setCredentials({
+    const oauth2_client = new google.auth.OAuth2();
+    oauth2_client.setCredentials({
       access_token: credentials.access_token,
       refresh_token: credentials.refresh_token,
     });
-    auth = oauth2Client;
+    auth = oauth2_client;
   } else {
     throw new Error("Invalid credentials provided");
   }
@@ -33,9 +26,6 @@ function createGoogleFormsClient(credentials) {
   return google.forms({ version: "v1", auth });
 }
 
-/**
- * Creates Google Drive API client for listing forms
- */
 function createGoogleDriveClient(credentials) {
   let auth;
 
@@ -45,12 +35,12 @@ function createGoogleDriveClient(credentials) {
       scopes: ["https://www.googleapis.com/auth/drive.readonly"],
     });
   } else if (credentials.access_token) {
-    const oauth2Client = new google.auth.OAuth2();
-    oauth2Client.setCredentials({
+    const oauth2_client = new google.auth.OAuth2();
+    oauth2_client.setCredentials({
       access_token: credentials.access_token,
       refresh_token: credentials.refresh_token,
     });
-    auth = oauth2Client;
+    auth = oauth2_client;
   } else {
     throw new Error("Invalid credentials provided");
   }
@@ -58,9 +48,6 @@ function createGoogleDriveClient(credentials) {
   return google.drive({ version: "v3", auth });
 }
 
-/**
- * Get list of Google Forms from user's Drive
- */
 async function fnGetFormsList({ credentials, page_size = 10, page_token = null }) {
   try {
     const drive = createGoogleDriveClient(credentials);
@@ -74,9 +61,8 @@ async function fnGetFormsList({ credentials, page_size = 10, page_token = null }
     });
 
     const forms = response.data.files || [];
-
-    // Log service account info for debugging
     const service_account_email = credentials.client_email || "unknown";
+
     console.log(`✓ Forms query successful. Found ${forms.length} forms accessible to ${service_account_email}`);
 
     if (forms.length === 0) {
@@ -94,7 +80,6 @@ async function fnGetFormsList({ credentials, page_size = 10, page_token = null }
   } catch (error) {
     console.error("Error fetching Google Forms list:", error.message);
 
-    // Check if API not enabled
     if (error.message.includes("has not been used") || error.message.includes("is disabled")) {
       throw new Error("Google Drive API is not enabled. Please enable it in Google Cloud Console.");
     }
@@ -103,9 +88,6 @@ async function fnGetFormsList({ credentials, page_size = 10, page_token = null }
   }
 }
 
-/**
- * Get a specific Google Form structure
- */
 async function fnGetFormStructure({ credentials, form_id }) {
   try {
     const forms = createGoogleFormsClient(credentials);
@@ -115,9 +97,8 @@ async function fnGetFormStructure({ credentials, form_id }) {
     });
 
     const form = response.data;
-
-    // Extract questions/fields
     const fields = [];
+
     if (form.items) {
       form.items.forEach((item, index) => {
         const question = item.questionItem?.question;
@@ -130,7 +111,6 @@ async function fnGetFormStructure({ credentials, form_id }) {
             is_required: question.required || false,
           };
 
-          // Determine field type
           if (question.textQuestion) {
             field.field_type = question.textQuestion.paragraph ? "textarea" : "text";
           } else if (question.choiceQuestion) {
@@ -178,17 +158,11 @@ async function fnGetFormStructure({ credentials, form_id }) {
   }
 }
 
-/**
- * Get responses from a Google Form
- */
 async function fnGetFormResponses({ credentials, form_id, page_size = 100, page_token = null, filters = {} }) {
   try {
     const forms = createGoogleFormsClient(credentials);
-
-    // Get form structure first to understand the fields
     const form_structure = await fnGetFormStructure({ credentials, form_id });
 
-    // Get responses
     const response = await forms.forms.responses.list({
       formId: form_id,
       pageSize: page_size,
@@ -199,7 +173,6 @@ async function fnGetFormResponses({ credentials, form_id, page_size = 100, page_
     const responses = response.data.responses || [];
     const formatted_responses = [];
 
-    // Format responses with field labels
     for (const resp of responses) {
       const formatted = {
         response_id: resp.responseId,
@@ -220,7 +193,6 @@ async function fnGetFormResponses({ credentials, form_id, page_size = 100, page_
             value: null,
           };
 
-          // Extract answer value based on type
           if (answer.textAnswers) {
             formatted_answer.value = answer.textAnswers.answers?.map((a) => a.value).join(", ") || null;
           } else if (answer.fileUploadAnswers) {
@@ -248,14 +220,10 @@ async function fnGetFormResponses({ credentials, form_id, page_size = 100, page_
   }
 }
 
-/**
- * Get responses with column visibility settings
- */
 async function fnGetFormResponsesWithColumns({ credentials, form_id, visible_columns = [], calculate_columns = [] }) {
   try {
     const result = await fnGetFormResponses({ credentials, form_id });
 
-    // Apply column visibility filter
     if (visible_columns.length > 0) {
       result.responses = result.responses.map((response) => ({
         ...response,
@@ -263,21 +231,18 @@ async function fnGetFormResponsesWithColumns({ credentials, form_id, visible_col
       }));
     }
 
-    // Add calculated columns
     if (calculate_columns.length > 0) {
       result.responses = result.responses.map((response) => {
         const calculated = {};
 
         calculate_columns.forEach((calc) => {
           if (calc.type === "sum") {
-            // Sum numeric values from specified fields
             calculated[calc.name] = calc.fields.reduce((sum, field_id) => {
               const answer = response.answers.find((a) => a.field_id === field_id);
               const value = parseFloat(answer?.value) || 0;
               return sum + value;
             }, 0);
           } else if (calc.type === "concat") {
-            // Concatenate values
             calculated[calc.name] = calc.fields
               .map((field_id) => {
                 const answer = response.answers.find((a) => a.field_id === field_id);
@@ -285,13 +250,11 @@ async function fnGetFormResponsesWithColumns({ credentials, form_id, visible_col
               })
               .join(calc.separator || " ");
           } else if (calc.type === "count") {
-            // Count non-empty answers
             calculated[calc.name] = calc.fields.filter((field_id) => {
               const answer = response.answers.find((a) => a.field_id === field_id);
               return answer?.value !== null && answer?.value !== "";
             }).length;
           } else if (calc.type === "average") {
-            // Average numeric values
             const values = calc.fields
               .map((field_id) => {
                 const answer = response.answers.find((a) => a.field_id === field_id);
