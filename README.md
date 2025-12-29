@@ -125,3 +125,351 @@ Module pattern:
 - `column` can reference a database column for values
 - Modes: `question` (standard) and `check` (audit)
 - Access: role/group/link tokens; full response history stored with scores
+
+## Google Forms Integration
+
+The application now supports integration with Google Forms API to fetch forms and responses from Google Drive.
+
+### Setup Google Forms API
+
+**Option 1: Service Account (Recommended for server-to-server)**
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Enable Google Forms API and Google Drive API
+4. Create a Service Account and download the JSON key
+5. Share your Google Forms with the service account email
+6. Set `GOOGLE_SERVICE_ACCOUNT_PATH` in `.env` to the path of your JSON key
+
+**Option 2: OAuth2 (For user-specific access)**
+
+1. Create OAuth2 credentials in Google Cloud Console
+2. Get access token and refresh token
+3. Set `GOOGLE_FORMS_OAUTH_ACCESS_TOKEN` and `GOOGLE_FORMS_OAUTH_REFRESH_TOKEN` in `.env`
+
+### Google Forms API Endpoints
+
+**List all Google Forms:**
+```bash
+POST /api/google-forms/list
+{
+  "credentials": { /* service account JSON or OAuth tokens */ },
+  "page_size": 10,
+  "page_token": null
+}
+```
+
+**Get form structure:**
+```bash
+POST /api/google-forms/:form_id
+{
+  "credentials": { /* credentials */ }
+}
+```
+
+**Get form responses:**
+```bash
+POST /api/google-forms/:form_id/responses
+{
+  "credentials": { /* credentials */ },
+  "page_size": 100
+}
+```
+
+**Get responses with column visibility and calculated columns:**
+```bash
+POST /api/google-forms/:form_id/responses/columns
+{
+  "credentials": { /* credentials */ },
+  "visible_columns": ["question_id_1", "question_id_2"],
+  "calculate_columns": [
+    {
+      "name": "total_score",
+      "type": "sum",
+      "fields": ["question_id_1", "question_id_2"]
+    },
+    {
+      "name": "full_name",
+      "type": "concat",
+      "fields": ["first_name", "last_name"],
+      "separator": " "
+    }
+  ]
+}
+```
+
+**Calculated Column Types:**
+- `sum` - Sum numeric values from specified fields
+- `average` - Calculate average of numeric fields
+- `concat` - Concatenate text values with separator
+- `count` - Count non-empty answers
+
+## Docker Deployment
+
+### Production Deployment
+
+**Build and run with Docker Compose:**
+
+```bash
+# Build images
+docker-compose build
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+**Environment-specific deployments:**
+
+```bash
+# Development
+docker-compose up -d
+
+# Production (with custom compose file)
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Individual Container Management
+
+**Backend:**
+```bash
+cd backend
+docker build -t core-app-backend .
+docker run -p 3001:3001 --env-file ../.env core-app-backend
+```
+
+**Frontend:**
+```bash
+cd frontend
+docker build -t core-app-frontend .
+docker run -p 3000:3000 core-app-frontend
+```
+
+**MySQL:**
+```bash
+docker run -d \
+  -p 3306:3306 \
+  -e MYSQL_ROOT_PASSWORD=yourpassword \
+  -e MYSQL_DATABASE=core_app \
+  -v mysql_data:/var/lib/mysql \
+  mysql:8.0
+```
+
+### Docker Compose Services
+
+The `docker-compose.yml` includes:
+- **mysql** - MySQL 8.0 database
+- **backend** - Node.js Express API server
+- **frontend** - Next.js application
+
+**Volumes:**
+- `mysql_data` - Persistent database storage
+
+**Networks:**
+- `app-network` - Internal communication between services
+
+## Module Development
+
+### Creating a New Module
+
+Use the built-in module generator:
+
+```bash
+cd backend
+npm run db:module:create
+
+# Follow prompts:
+# - Module name: e.g., "inventory"
+# - Table prefix: e.g., "inv_"
+```
+
+This creates:
+- `database/migrations/init_<module>.sql`
+- `database/seeds/seed_<module>.sql`
+
+### Module Structure
+
+**1. Create Module Tables (migration file):**
+
+```sql
+-- database/migrations/init_inventory.sql
+DROP TABLE IF EXISTS inv_products;
+CREATE TABLE inv_products (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  sku VARCHAR(100) UNIQUE NOT NULL,
+  price DECIMAL(10,2) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**2. Add Sample Data (seed file):**
+
+```sql
+-- database/seeds/seed_inventory.sql
+INSERT INTO inv_products (name, sku, price) VALUES
+  ('Widget A', 'WDG-001', 19.99),
+  ('Widget B', 'WDG-002', 29.99);
+```
+
+**3. Create API Routes:**
+
+```
+backend/src/routes/inventory/
+  ├── inventory.router.js
+  ├── inventory.controller.js
+  ├── inventory.service.js
+  └── inventory.schema.js
+```
+
+**4. Register Routes in `app.js`:**
+
+```javascript
+const inventoryRouter = require('./routes/inventory/inventory.router');
+app.use("/api/inventory", inventoryRouter);
+```
+
+### Running Module Migrations
+
+```bash
+# Run all migrations (including your new module)
+npm run db:init
+
+# Run seeds
+npm run db:seed
+
+# Or reset everything
+npm run db:reset
+```
+
+## Development & Testing
+
+### Local Development Setup
+
+**Backend development with hot reload:**
+```bash
+cd backend
+npm install
+npm run dev  # Uses nodemon for auto-restart
+```
+
+**Frontend development:**
+```bash
+cd frontend
+npm install
+npm run dev  # Next.js dev server with hot reload
+```
+
+**Database development:**
+```bash
+# Initialize database
+npm run db:init
+
+# Seed with test data
+npm run db:seed
+
+# Reset database (drops all tables)
+npm run db:reset
+
+# Bootstrap (init + seed)
+npm run db:bootstrap
+```
+
+### Testing
+
+**Manual API Testing:**
+
+```bash
+# Health check
+curl http://localhost:3001/health
+
+# Login
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"balkibumen@gmail.com","password":"Admin@123"}'
+
+# List forms (with auth token)
+curl http://localhost:3001/api/forms \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Testing Google Forms Integration:**
+
+```bash
+# Test with service account credentials
+curl -X POST http://localhost:3001/api/google-forms/list \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "credentials": {
+      "type": "service_account",
+      "project_id": "...",
+      "private_key": "...",
+      "client_email": "..."
+    },
+    "page_size": 10
+  }'
+```
+
+### Debugging
+
+**Backend logs:**
+```bash
+# With Docker
+docker-compose logs -f backend
+
+# Local
+npm run dev  # Logs appear in terminal
+```
+
+**Database inspection:**
+```bash
+# Connect to MySQL in Docker
+docker-compose exec mysql mysql -u root -p core_app
+
+# Show tables
+SHOW TABLES;
+
+# Check users
+SELECT * FROM system_users;
+```
+
+**Common Issues:**
+
+1. **Port already in use:**
+   ```bash
+   # Find process using port 3001
+   lsof -i :3001
+   kill -9 <PID>
+   ```
+
+2. **Database connection failed:**
+   - Check MySQL is running: `docker-compose ps`
+   - Verify credentials in `.env`
+   - Ensure database exists: `npm run db:init`
+
+3. **Google Forms API errors:**
+   - Verify API is enabled in Google Cloud Console
+   - Check credentials are valid
+   - Ensure forms are shared with service account
+
+### Code Quality
+
+**Naming conventions:**
+- Functions: `camelCase`
+- Variables: `snake_case`
+- Database columns: `snake_case`
+- Files: `kebab-case`
+- Constants: `UPPER_SNAKE_CASE`
+
+**Code structure:**
+- Keep business logic in service files
+- Controllers handle HTTP requests/responses only
+- Use Zod schemas for validation
+- Always use parameterized queries (SQL injection prevention)

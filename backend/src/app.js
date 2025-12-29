@@ -5,6 +5,7 @@ const cors = require('cors');
 
 const authRouter = require('./routes/auth/auth.router');
 const formRouter = require('./routes/form/form.router');
+const googleFormsRouter = require('./routes/google-forms/google-forms.router');
 const groupRouter = require('./routes/group/group.router');
 const policyRouter = require('./routes/policy/policy.router');
 const roleRouter = require('./routes/role/role.router');
@@ -24,6 +25,7 @@ app.get("/health", (req, res) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/forms", formRouter);
+app.use("/api/google-forms", googleFormsRouter);
 app.use("/api/groups", groupRouter);
 app.use("/api/policies", policyRouter);
 app.use("/api/roles", roleRouter);
