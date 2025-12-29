@@ -9,6 +9,7 @@ import { getFormStructure, getCredentials, type FormStructure } from "@/lib/form
 import { ArrowLeft, AlertCircle, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthGuard } from "@/lib/use-auth-guard";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
 import {
   Tabs,
   TabsContent,
@@ -18,7 +19,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function FormDetailPage() {
-  useAuthGuard();
+  const { user, checking, handleLogout } = useAuthGuard();
 
   const params = useParams();
   const router = useRouter();
@@ -67,104 +68,108 @@ export default function FormDetailPage() {
     window.open(`https://docs.google.com/forms/d/${form_id}/edit`, "_blank");
   };
 
+  if (checking || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <DashboardShell
+      user={user}
+      onLogout={handleLogout}
+      title={loading ? "Loading..." : form?.title || "Form Details"}
+      subtitle="View form structure and manage access"
+      actions={
+        <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {loading ? "Loading..." : form?.title || "Form Details"}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              View form structure and manage access
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={copyPublicLink} variant="outline">
+          <Button onClick={copyPublicLink} variant="outline" size="sm">
             <Copy className="mr-2 h-4 w-4" />
-            Copy Public Link
+            Copy Link
           </Button>
-          <Button onClick={openInGoogle} variant="outline">
+          <Button onClick={openInGoogle} variant="outline" size="sm">
             <ExternalLink className="mr-2 h-4 w-4" />
             Open in Google
           </Button>
         </div>
+      }
+    >
+      <div className="space-y-6">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <Tabs defaultValue="preview" className="w-full">
+          <TabsList>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsTrigger value="responses">Responses</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="preview" className="mt-6">
+            {form && (
+              <FormViewer form={form} loading={loading} error={error} showSubmit={false} />
+            )}
+          </TabsContent>
+
+          <TabsContent value="responses" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Form Responses</CardTitle>
+                <CardDescription>
+                  View and analyze responses from this form
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12 text-muted-foreground">
+                  Responses feature coming soon...
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Form Settings</CardTitle>
+                <CardDescription>
+                  Configure access and sharing settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h3 className="font-medium">Public Access</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Anyone with the link can fill this form
+                      </p>
+                    </div>
+                    <Button variant="outline" onClick={copyPublicLink}>
+                      Copy Link
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <h3 className="font-medium">Form ID</h3>
+                      <p className="text-sm text-muted-foreground font-mono">
+                        {form_id}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <Tabs defaultValue="preview" className="w-full">
-        <TabsList>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-          <TabsTrigger value="responses">Responses</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="preview" className="mt-6">
-          {form && (
-            <FormViewer form={form} loading={loading} error={error} showSubmit={false} />
-          )}
-        </TabsContent>
-
-        <TabsContent value="responses" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Form Responses</CardTitle>
-              <CardDescription>
-                View and analyze responses from this form
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                Responses feature coming soon...
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="settings" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Form Settings</CardTitle>
-              <CardDescription>
-                Configure access and sharing settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Public Access</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Anyone with the link can fill this form
-                    </p>
-                  </div>
-                  <Button variant="outline" onClick={copyPublicLink}>
-                    Copy Link
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <h3 className="font-medium">Form ID</h3>
-                    <p className="text-sm text-muted-foreground font-mono">
-                      {form_id}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+    </DashboardShell>
   );
 }
