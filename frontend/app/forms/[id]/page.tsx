@@ -151,21 +151,6 @@ export default function FormDetailPage() {
       onLogout={handleLogout}
       title={loading ? "Loading..." : form?.title || "Form Details"}
       subtitle="View form structure and manage access"
-      actions={
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Button onClick={copyPublicLink} variant="outline" size="sm">
-            <Copy className="mr-2 h-4 w-4" />
-            Copy Link
-          </Button>
-          <Button onClick={openInGoogle} variant="outline" size="sm">
-            <ExternalLink className="mr-2 h-4 w-4" />
-            Open in Google
-          </Button>
-        </div>
-      }
     >
       <div className="space-y-6">
         {error && (

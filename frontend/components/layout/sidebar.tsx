@@ -64,7 +64,7 @@ export function Sidebar({ role = "user", onLogout, userName, mobileOpen = false,
           </button>
         </div>
 
-        <div className="flex-1 p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <nav className="space-y-1">
             {items.map((item) => {
               const Icon = item.icon;
@@ -79,8 +79,8 @@ export function Sidebar({ role = "user", onLogout, userName, mobileOpen = false,
           </nav>
         </div>
 
-        <div className="p-4">
-          <div className="rounded-2xl bg-gradient-to-br from-indigo-600 via-sky-500 to-emerald-400 text-white p-5 mt-auto">
+        <div className="p-4 flex-shrink-0">
+          <div className="rounded-2xl bg-gradient-to-br from-indigo-600 via-sky-500 to-emerald-400 text-white p-5">
             <div className="flex items-start gap-3">
               <div className="mt-1 rounded-full bg-white/20 p-2">
                 <Sparkles className="h-4 w-4" />
@@ -93,7 +93,7 @@ export function Sidebar({ role = "user", onLogout, userName, mobileOpen = false,
           </div>
         </div>
 
-        <div className="border-t p-4">
+        <div className="border-t p-4 flex-shrink-0">
           <div className="mb-3">
             <p className="text-sm font-medium">{userName || "You"}</p>
             <p className="text-xs text-muted-foreground">Stay productive, stay secure</p>

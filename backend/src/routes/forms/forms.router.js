@@ -16,6 +16,16 @@ const {
   formResponses,
   formResponsesWithColumns,
 } = require("./forms.controller");
+const {
+  schemaAssignFormToGroup,
+  schemaFormId,
+  schemaRemoveFormFromGroup,
+} = require("../groups/groups.schema");
+const {
+  formGroupsList,
+  assignFormToGroup,
+  removeFormFromGroup,
+} = require("../groups/groups.controller");
 
 const router = express.Router();
 
@@ -29,5 +39,11 @@ router.post("/:form_id", authMiddleware, policyMiddleware("forms.get"), validate
 router.post("/:form_id/responses", authMiddleware, policyMiddleware("forms.view_responses"), validateParams(schemaFormResponses), validateBody(schemaFormResponses), formResponses);
 
 router.post("/:form_id/responses/columns", authMiddleware, policyMiddleware("forms.view_responses"), validateParams(schemaFormResponsesWithColumns), validateBody(schemaFormResponsesWithColumns), formResponsesWithColumns);
+
+router.get("/:form_id/groups", authMiddleware, policyMiddleware("forms.manage_access"), validateParams(schemaFormId), formGroupsList);
+
+router.post("/:form_id/groups", authMiddleware, policyMiddleware("forms.manage_access"), validateParams(schemaFormId), validateBody(schemaAssignFormToGroup), assignFormToGroup);
+
+router.delete("/:form_id/groups/:group_id", authMiddleware, policyMiddleware("forms.manage_access"), validateParams(schemaRemoveFormFromGroup), removeFormFromGroup);
 
 module.exports = router;
