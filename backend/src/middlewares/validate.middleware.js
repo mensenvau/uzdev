@@ -3,8 +3,8 @@
  * Validates request data using Zod schemas
  */
 
-const { sendError } = require('../utils/response.util');
-const { formatApiError } = require('../utils/error.util');
+const { sendError } = require("../utils/response.util");
+const { formatApiError } = require("../utils/error.util");
 
 /**
  * Create validation middleware for request body

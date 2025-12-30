@@ -1,7 +1,17 @@
 const { asyncHandler } = require("../../utils/async.util");
 const { sendSuccess } = require("../../utils/response.util");
-const { formatApiError } = require("../../utils/error.util");
-const { fnGroupAssign, fnGroupCreate, fnGroupDelete, fnGroupGet, fnGroupList, fnGroupRemove, fnGroupUpdate } = require("./group.service");
+const {
+  fnGroupAssign,
+  fnGroupCreate,
+  fnGroupDelete,
+  fnGroupGet,
+  fnGroupList,
+  fnGroupRemove,
+  fnGroupUpdate,
+  fnGetFormGroups,
+  fnAssignFormToGroup,
+  fnRemoveFormFromGroup,
+} = require("./group.service");
 
 const groupAssign = asyncHandler(async (req, res) => {
   const { group_id, user_id } = req.body;
@@ -46,6 +56,27 @@ const groupUpdate = asyncHandler(async (req, res) => {
   sendSuccess(res, { group }, "Group updated successfully");
 });
 
+const groupFormGroupsList = asyncHandler(async (req, res) => {
+  const { form_id } = req.params;
+  const groups = await fnGetFormGroups({ form_id });
+  sendSuccess(res, { groups }, "Form groups fetched successfully");
+});
+
+const groupAssignFormToGroup = asyncHandler(async (req, res) => {
+  const { form_id } = req.params;
+  const { group_id } = req.body;
+
+  const result = await fnAssignFormToGroup({ form_id, group_id });
+  sendSuccess(res, result, "Form assigned to group successfully", 201);
+});
+
+const groupRemoveFormFromGroup = asyncHandler(async (req, res) => {
+  const { form_id, group_id } = req.params;
+
+  const result = await fnRemoveFormFromGroup({ form_id, group_id });
+  sendSuccess(res, result, "Form removed from group successfully");
+});
+
 module.exports = {
   groupAssign,
   groupCreate,
@@ -54,4 +85,7 @@ module.exports = {
   groupList,
   groupRemove,
   groupUpdate,
+  groupFormGroupsList,
+  groupAssignFormToGroup,
+  groupRemoveFormFromGroup,
 };

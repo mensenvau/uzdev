@@ -78,10 +78,10 @@ function ManageUserPageContent() {
             <h2 className="text-xl font-semibold">User details</h2>
             <p className="text-sm text-muted-foreground">Structured tabs to manage this user.</p>
           </div>
-          <Tabs>
+          <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as any)}>
             <TabsList className="bg-muted">
               {tabs.map((tab) => (
-                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => handleTabChange(tab.key as any)}>
+                <TabsTrigger key={tab.key} value={tab.key}>
                   {tab.label}
                 </TabsTrigger>
               ))}

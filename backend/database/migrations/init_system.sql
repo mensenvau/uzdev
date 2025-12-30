@@ -1,16 +1,15 @@
 -- ============================================================================
 -- SYSTEM MODULE INITIALIZATION
 -- ============================================================================
--- This file creates all tables for the system module (system_* prefix)
+-- This file creates all tables for the system module (system_* prefix) plus system_form_groups mapping
 -- Run this ONCE when setting up the database
 --
 -- Features:
 -- - User management and authentication
 -- - Role-based access control (RBAC)
 -- - Policy-based permissions
--- - Group management
--- - Dynamic forms with field types
--- - Form access control and responses
+-- - Group management and membership
+-- - Google Form to group assignments
 --
 -- Usage:
 --   npm run db:init
@@ -19,6 +18,9 @@
 -- Drop existing tables if they exist (for clean reinstall)
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- Cleanup legacy name and current name for form-group mapping
+DROP TABLE IF EXISTS `form_groups`;
+DROP TABLE IF EXISTS `system_form_groups`;
 DROP TABLE IF EXISTS `system_form_response_values`;
 DROP TABLE IF EXISTS `system_form_responses`;
 DROP TABLE IF EXISTS `system_form_field_table_sources`;
@@ -153,139 +155,25 @@ CREATE TABLE `system_group_users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Many-to-many: Groups to Users';
 
 -- ============================================================================
--- FORMS TABLE
+-- GOOGLE FORM TO GROUP ASSIGNMENTS
 -- ============================================================================
-CREATE TABLE `system_forms` (
+CREATE TABLE `system_form_groups` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(255) NOT NULL,
-  `description` TEXT NULL,
-  `created_by` INT UNSIGNED NULL,
-  `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
+  `form_id` VARCHAR(255) NOT NULL COMMENT 'Google Form ID',
+  `group_id` INT UNSIGNED NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  INDEX `idx_created_by` (`created_by`),
-  INDEX `idx_is_active` (`is_active`),
-  INDEX `idx_created_at` (`created_at`),
-  CONSTRAINT `fk_forms_creator` FOREIGN KEY (`created_by`) REFERENCES `system_users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Dynamic forms for data collection';
-
--- ============================================================================
--- FORM ACCESS TABLE
--- ============================================================================
-CREATE TABLE `system_form_access` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `form_id` INT UNSIGNED NOT NULL,
-  `access_type` ENUM('role', 'group', 'link', 'user', 'public') NOT NULL DEFAULT 'role',
-  `access_value` VARCHAR(255) NOT NULL COMMENT 'Role name, group ID, user ID, or link token',
-  `expires_at` TIMESTAMP NULL,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  INDEX `idx_form` (`form_id`),
-  INDEX `idx_access_type_value` (`access_type`, `access_value`),
-  INDEX `idx_expires_at` (`expires_at`),
-  CONSTRAINT `fk_form_access_form` FOREIGN KEY (`form_id`) REFERENCES `system_forms` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Form access control by role/group/user/link/public';
-
--- ============================================================================
--- FORM FIELDS TABLE
--- ============================================================================
-CREATE TABLE `system_form_fields` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `form_id` INT UNSIGNED NOT NULL,
-  `field_key` VARCHAR(255) NOT NULL,
-  `label` VARCHAR(255) NOT NULL,
-  `field_type` ENUM('text', 'textarea', 'number', 'select', 'checkbox', 'radio', 'column', 'score') NOT NULL,
-  `mode` ENUM('question', 'check') NOT NULL DEFAULT 'question',
-  `is_required` BOOLEAN NOT NULL DEFAULT FALSE,
-  `field_order` INT NOT NULL DEFAULT 0,
-  `settings` JSON NULL COMMENT 'Additional field settings',
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  INDEX `idx_form` (`form_id`),
-  INDEX `idx_field_order` (`field_order`),
-  CONSTRAINT `fk_form_fields_form` FOREIGN KEY (`form_id`) REFERENCES `system_forms` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Form field definitions';
-
--- ============================================================================
--- FORM FIELD OPTIONS TABLE
--- ============================================================================
-CREATE TABLE `system_form_field_options` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `field_id` INT UNSIGNED NOT NULL,
-  `value` VARCHAR(255) NOT NULL,
-  `label` VARCHAR(255) NULL,
-  `score` INT NOT NULL DEFAULT 0,
-  `option_order` INT NOT NULL DEFAULT 0,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  INDEX `idx_field` (`field_id`),
-  INDEX `idx_option_order` (`option_order`),
-  CONSTRAINT `fk_field_options_field` FOREIGN KEY (`field_id`) REFERENCES `system_form_fields` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Options for select/checkbox/radio fields';
-
--- ============================================================================
--- FORM FIELD TABLE SOURCE
--- ============================================================================
-CREATE TABLE `system_form_field_table_sources` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `field_id` INT UNSIGNED NOT NULL UNIQUE,
-  `source_table` VARCHAR(255) NOT NULL,
-  `source_value_column` VARCHAR(255) NOT NULL,
-  `source_label_column` VARCHAR(255) NOT NULL,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `idx_field` (`field_id`),
-CONSTRAINT `fk_field_table_source_field` FOREIGN KEY (`field_id`) REFERENCES `system_form_fields` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Dynamic table source for column fields';
-
--- ============================================================================
--- FORM RESPONSES TABLE
--- ============================================================================
-CREATE TABLE `system_form_responses` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `form_id` INT UNSIGNED NOT NULL,
-  `user_id` INT UNSIGNED NULL,
-  `total_score` INT NOT NULL DEFAULT 0,
-  `status` ENUM('draft', 'submitted', 'reviewed') NOT NULL DEFAULT 'draft',
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  INDEX `idx_form` (`form_id`),
-  INDEX `idx_user` (`user_id`),
-  INDEX `idx_status` (`status`),
-  INDEX `idx_created_at` (`created_at`),
-  INDEX `idx_form_created` (`form_id`, `created_at`),
-  CONSTRAINT `fk_responses_form` FOREIGN KEY (`form_id`) REFERENCES `system_forms` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_responses_user` FOREIGN KEY (`user_id`) REFERENCES `system_users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User submissions to forms';
-
--- ============================================================================
--- FORM RESPONSE VALUES TABLE
--- ============================================================================
-CREATE TABLE `system_form_response_values` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `response_id` INT UNSIGNED NOT NULL,
-  `field_id` INT UNSIGNED NOT NULL,
-  `value` TEXT NULL COMMENT 'User answer value',
-  `score` INT NOT NULL DEFAULT 0,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  INDEX `idx_response` (`response_id`),
-  INDEX `idx_field` (`field_id`),
-  CONSTRAINT `fk_response_values_response` FOREIGN KEY (`response_id`) REFERENCES `system_form_responses` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_response_values_field` FOREIGN KEY (`field_id`) REFERENCES `system_form_fields` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Individual field values in form responses';
+  UNIQUE KEY `unique_form_group` (`form_id`, `group_id`),
+  INDEX `idx_form_id` (`form_id`),
+  INDEX `idx_group_id` (`group_id`),
+  CONSTRAINT `fk_system_form_groups_group` FOREIGN KEY (`group_id`) REFERENCES `system_groups` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Google Form assignments to system groups';
 
 -- ============================================================================
 -- INITIALIZATION COMPLETE
 -- ============================================================================
--- All system_* tables have been created with:
+-- Base tables have been created with:
 -- - Proper indexes for performance
 -- - Foreign key constraints for data integrity
 -- - UTF8MB4 encoding for full Unicode support

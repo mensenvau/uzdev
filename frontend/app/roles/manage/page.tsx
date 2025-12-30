@@ -56,10 +56,10 @@ function ManageRolePageContent() {
             <h2 className="text-xl font-semibold">Role details</h2>
             <p className="text-sm text-muted-foreground">Edit metadata or manage memberships.</p>
           </div>
-          <Tabs>
+          <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as any)}>
             <TabsList className="bg-muted">
               {tabs.map((tab) => (
-                <TabsTrigger key={tab.key} active={activeTab === tab.key} onClick={() => handleTabChange(tab.key as any)}>
+                <TabsTrigger key={tab.key} value={tab.key}>
                   {tab.label}
                 </TabsTrigger>
               ))}

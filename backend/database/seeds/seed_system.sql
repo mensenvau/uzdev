@@ -6,7 +6,7 @@
 --
 -- Includes:
 -- - 4 default roles (super, admin, user, guest)
--- - 68 policies for access control
+-- - Policies for access control (users, roles, policies, groups, Google Forms, self-management)
 -- - Role-policy assignments
 -- - 3 default groups
 -- - 1 super admin user
@@ -62,19 +62,12 @@ INSERT INTO `system_policies` (`name`, `description`) VALUES
 ('group.assign', 'Add users to groups'),
 ('group.remove', 'Remove users from groups'),
 
--- Form Policies
-('form.list', 'List all forms'),
-('form.get', 'Get form details'),
-('form.create', 'Create new forms'),
-('form.edit', 'Edit form structure'),
-('form.delete', 'Delete forms'),
-('form.submit', 'Submit form responses'),
-('form.view_responses', 'View form responses'),
-('form.review', 'Review and score responses'),
-('form.access_manage', 'Manage form access control'),
-('form.add_access', 'Add form access rules'),
-('form.public_link', 'Generate public form links'),
-('form.response_detail', 'View form response details'),
+-- Google Forms Integration Policies
+('forms.list', 'List Google Forms from Drive'),
+('forms.get', 'Get Google Form structure'),
+('forms.view', 'View Google Form structure'),
+('forms.view_responses', 'View Google Form responses'),
+('forms.manage_access', 'Manage Google Form access settings'),
 
 -- Self Management Policies
 ('me.get', 'Get own profile'),
@@ -102,7 +95,7 @@ SELECT @role_super_id, id FROM system_policies;
 -- ADMIN ROLE: All except delete permissions
 INSERT INTO system_role_policies (role_id, policy_id)
 SELECT @role_admin_id, id FROM system_policies
-WHERE name NOT IN ('user.delete', 'role.delete', 'policy.delete', 'group.delete', 'form.delete', 'me.delete');
+WHERE name NOT IN ('user.delete', 'role.delete', 'policy.delete', 'group.delete', 'me.delete');
 
 -- USER ROLE: Basic permissions
 INSERT INTO system_role_policies (role_id, policy_id)
@@ -110,9 +103,10 @@ SELECT @role_user_id, id FROM system_policies
 WHERE name IN (
   'me.get',
   'me.edit',
-  'form.list',
-  'form.get',
-  'form.submit'
+  'forms.list',
+  'forms.get',
+  'forms.view',
+  'forms.view_responses'
 );
 
 -- GUEST ROLE: Minimal permissions
@@ -167,7 +161,7 @@ ON DUPLICATE KEY UPDATE role_id = role_id;
 -- ============================================================================
 -- System module has been seeded with:
 -- - 4 roles (super, admin, user, guest)
--- - 34 policies
+-- - 33 policies
 -- - All role-policy assignments
 -- - 3 default groups
 -- - 1 super admin user (balkibumen@gmail.com / Admin@123)
