@@ -55,15 +55,7 @@ export default function DashboardPage() {
       .filter((r) => r.id && r.name);
   }, [user?.roles]);
 
-  const { activeRole, setActiveRole } = useRolePreference(
-    user
-      ? {
-          id: user.id,
-          role: user.role,
-          roles: roleOptions.map((r) => r.name),
-        }
-      : null
-  );
+  const { activeRole, setActiveRole } = useRolePreference(user ? { id: user.id, role: user.role, roles: roleOptions.map((r) => r.name) } : null);
 
   const handleRoleChange = async (roleId: number) => {
     if (!user?.id || !roleId) return;
@@ -91,23 +83,7 @@ export default function DashboardPage() {
   const groups = Array.isArray(user?.groups) ? user.groups : [];
 
   return (
-    <DashboardShell
-      user={user}
-      title="Your control center"
-      subtitle="Track forms, manage access, and stay on top of your workflows."
-      onLogout={logout}
-      actions={
-        roleOptions.length > 1 ? (
-          <select className="h-10 rounded-md border bg-white px-3 text-sm capitalize shadow-sm" value={roleOptions.find((r) => r.name === activeRole)?.id ?? ""} onChange={(e) => handleRoleChange(Number(e.target.value))}>
-            {roleOptions.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        ) : null
-      }
-    >
+    <DashboardShell user={user} title="Your control center" subtitle="Track forms, manage access, and stay on top of your workflows." onLogout={logout}>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border bg-white/80 backdrop-blur">
           <CardHeader>
@@ -129,7 +105,16 @@ export default function DashboardPage() {
             </div>
             <div className="rounded-2xl border bg-gradient-to-br from-slate-50 to-white p-4">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Role</p>
-              <p className="mt-1 text-sm font-medium capitalize">{activeRole || "user"}</p>
+              {/* <p className="mt-1 text-sm font-medium capitalize">{activeRole || "user"}</p> */}
+              <p className="mt-1 text-sm font-medium capitalize">
+                <select className="h-10 rounded-md border bg-white px-3 text-sm capitalize shadow-sm" value={roleOptions.find((r) => r.name === activeRole)?.id ?? ""} onChange={(e) => handleRoleChange(Number(e.target.value))}>
+                  {roleOptions.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </p>
             </div>
           </CardContent>
         </Card>

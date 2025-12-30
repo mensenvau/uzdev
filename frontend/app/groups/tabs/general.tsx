@@ -53,6 +53,7 @@ export function GeneralTab({ groupId }: { groupId: string | null }) {
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Edit the basic details for this group.</p>
       <div className="space-y-2">
         <label className="text-sm font-medium">Name</label>
         <Input value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} disabled={loading} />

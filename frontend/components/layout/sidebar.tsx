@@ -86,7 +86,7 @@ export function Sidebar({ role = "user", onLogout, userName, mobileOpen = false,
                 <Sparkles className="h-4 w-4" />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-semibold">Powerful forms</p>
+                <p className="text-sm font-semibold">Smart forms</p>
                 <p className="text-xs text-white/80">Secure access control and fast submissions in one beautiful dashboard.</p>
               </div>
             </div>
