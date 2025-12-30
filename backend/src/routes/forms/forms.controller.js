@@ -1,16 +1,16 @@
 const { asyncHandler } = require("../../utils/async.util");
 const { sendSuccess } = require("../../utils/response.util");
-const { fnGetFormsList, fnGetFormStructure, fnGetFormResponses, fnGetFormResponsesWithColumns } = require("./forms.service");
-const { fnGetGoogleFormsCredentials } = require("./forms.credentials");
+const { getFormsList, getFormStructure, getFormResponses, getFormResponsesWithColumns } = require("./forms.service");
+const { getGoogleFormsCredentials } = require("./forms.credentials");
 
 const formsList = asyncHandler(async (req, res) => {
   const { page_size, page_token } = req.body;
-  const google_credentials = fnGetGoogleFormsCredentials();
+  const google_credentials = getGoogleFormsCredentials();
 
-  const result = await fnGetFormsList({
+  const result = await getFormsList({
     credentials: google_credentials,
     page_size: parseInt(page_size) || 10,
-    page_token: page_token || null,
+    page_token: page_token || null
   });
 
   sendSuccess(res, result, "Forms fetched successfully");
@@ -18,11 +18,11 @@ const formsList = asyncHandler(async (req, res) => {
 
 const formGet = asyncHandler(async (req, res) => {
   const { form_id } = req.params;
-  const google_credentials = fnGetGoogleFormsCredentials();
+  const google_credentials = getGoogleFormsCredentials();
 
-  const result = await fnGetFormStructure({
+  const result = await getFormStructure({
     credentials: google_credentials,
-    form_id,
+    form_id
   });
 
   sendSuccess(res, { form: result }, "Form structure fetched successfully");
@@ -31,29 +31,29 @@ const formGet = asyncHandler(async (req, res) => {
 const formResponses = asyncHandler(async (req, res) => {
   const { page_size, page_token, filters } = req.body;
   const { form_id } = req.params;
-  const google_credentials = fnGetGoogleFormsCredentials();
+  const google_credentials = getGoogleFormsCredentials();
 
-  const result = await fnGetFormResponses({
+  const result = await getFormResponses({
     credentials: google_credentials,
     form_id,
-  page_size: parseInt(page_size) || 100,
-  page_token: page_token || null,
-  filters: filters || {},
-});
+    page_size: parseInt(page_size) || 100,
+    page_token: page_token || null,
+    filters: filters || {}
+  });
 
-sendSuccess(res, result, "Form responses fetched successfully");
+  sendSuccess(res, result, "Form responses fetched successfully");
 });
 
 const formResponsesWithColumns = asyncHandler(async (req, res) => {
   const { visible_columns, calculate_columns } = req.body;
   const { form_id } = req.params;
-  const google_credentials = fnGetGoogleFormsCredentials();
+  const google_credentials = getGoogleFormsCredentials();
 
-  const result = await fnGetFormResponsesWithColumns({
+  const result = await getFormResponsesWithColumns({
     credentials: google_credentials,
     form_id,
     visible_columns: visible_columns || [],
-    calculate_columns: calculate_columns || [],
+    calculate_columns: calculate_columns || []
   });
 
   sendSuccess(res, result, "Form responses with columns fetched successfully");
@@ -61,11 +61,11 @@ const formResponsesWithColumns = asyncHandler(async (req, res) => {
 
 const formGetPublic = asyncHandler(async (req, res) => {
   const { form_id } = req.params;
-  const google_credentials = fnGetGoogleFormsCredentials();
+  const google_credentials = getGoogleFormsCredentials();
 
-  const result = await fnGetFormStructure({
+  const result = await getFormStructure({
     credentials: google_credentials,
-    form_id,
+    form_id
   });
 
   sendSuccess(res, { form: result }, "Form structure fetched successfully");
@@ -74,7 +74,7 @@ const formGetPublic = asyncHandler(async (req, res) => {
 const formSubmitPublic = asyncHandler(async (req, res) => {
   const { form_id } = req.params;
   const { answers } = req.body;
-  const google_credentials = fnGetGoogleFormsCredentials();
+  const google_credentials = getGoogleFormsCredentials();
 
   if (!answers || !Array.isArray(answers)) {
     return res.status(400).json({ error: "Answers are required and must be an array" });
@@ -89,5 +89,5 @@ module.exports = {
   formGetPublic,
   formSubmitPublic,
   formResponses,
-  formResponsesWithColumns,
+  formResponsesWithColumns
 };

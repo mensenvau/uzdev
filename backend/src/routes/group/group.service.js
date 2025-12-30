@@ -1,38 +1,25 @@
 const { queryMany, queryOne } = require("../../utils/db");
+const { getPaginatedList } = require("../../utils/pagination.util");
 
-async function fnGroupList({ limit = 10, page = 1, search = "" }) {
-  const safe_limit = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
-  const safe_page = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1;
-  const offset = (safe_page - 1) * safe_limit;
-
-  let main_sql = "SELECT * FROM system_groups";
-  let count_sql = "SELECT COUNT(*) as total FROM system_groups";
-  const main_params = [];
-  const count_params = [];
-
-  if (search) {
-    main_sql += " WHERE name LIKE ? OR description LIKE ?";
-    count_sql += " WHERE name LIKE ? OR description LIKE ?";
-    const search_pattern = `%${search}%`;
-    main_params.push(search_pattern, search_pattern);
-    count_params.push(search_pattern, search_pattern);
-  }
-
-  main_sql += " ORDER BY created_at DESC LIMIT ? OFFSET ?";
-  main_params.push(safe_limit, offset);
-
-  const [groups, count_res] = await Promise.all([queryMany(main_sql, main_params), queryMany(count_sql, count_params)]);
+async function listGroups({ limit = 10, page = 1, search = "" }) {
+  const result = await getPaginatedList({
+    table_name: "system_groups",
+    search_fields: ["name", "description"],
+    limit,
+    page,
+    search
+  });
 
   return {
-    limit: safe_limit,
-    page: safe_page,
-    total: count_res[0].total,
-    groups,
+    limit: result.limit,
+    page: result.page,
+    total: result.total,
+    groups: result.items
   };
 }
 
-async function fnGroupGet(id) {
-  const group = await queryOne("SELECT * FROM system_groups WHERE id = ?", [Number(id)]);
+async function getGroup(group_id) {
+  const group = await queryOne("SELECT * FROM system_groups WHERE id = ?", [Number(group_id)]);
   if (!group) throw new Error("Group not found");
 
   const users = await queryMany(
@@ -40,18 +27,21 @@ async function fnGroupGet(id) {
      FROM system_users u
      INNER JOIN system_group_users gu ON gu.user_id = u.id
      WHERE gu.group_id = ?`,
-    [Number(id)]
+    [Number(group_id)]
   );
 
   return { ...group, users };
 }
 
-async function fnGroupCreate(name, description) {
-  const result = await queryMany("INSERT INTO system_groups (name, description) VALUES (?, ?)", [name, description || null]);
-  return await fnGroupGet(result.insertId);
+async function createGroup(name, description) {
+  const result = await queryMany(
+    "INSERT INTO system_groups (name, description) VALUES (?, ?)",
+    [name, description || null]
+  );
+  return await getGroup(result.insertId);
 }
 
-async function fnGroupUpdate(id, { name, description }) {
+async function updateGroup(group_id, { name, description }) {
   const updates = [];
   const update_params = [];
 
@@ -66,30 +56,36 @@ async function fnGroupUpdate(id, { name, description }) {
 
   if (updates.length === 0) throw new Error("No fields to update");
 
-  update_params.push(Number(id));
+  update_params.push(Number(group_id));
   await queryMany(`UPDATE system_groups SET ${updates.join(", ")} WHERE id = ?`, update_params);
 
-  return await fnGroupGet(id);
+  return await getGroup(group_id);
 }
 
-async function fnGroupDelete(id) {
-  const result = await queryMany("DELETE FROM system_groups WHERE id = ?", [Number(id)]);
+async function deleteGroup(group_id) {
+  const result = await queryMany("DELETE FROM system_groups WHERE id = ?", [Number(group_id)]);
   if (result.affectedRows === 0) throw new Error("Group not found");
   return true;
 }
 
-async function fnGroupAssign(group_id, user_id) {
-  await queryMany("INSERT INTO system_group_users (group_id, user_id) VALUES (?, ?)", [Number(group_id), Number(user_id)]);
+async function assignGroup(group_id, user_id) {
+  await queryMany(
+    "INSERT INTO system_group_users (group_id, user_id) VALUES (?, ?)",
+    [Number(group_id), Number(user_id)]
+  );
   return true;
 }
 
-async function fnGroupRemove(group_id, user_id) {
-  const result = await queryMany("DELETE FROM system_group_users WHERE group_id = ? AND user_id = ?", [Number(group_id), Number(user_id)]);
+async function removeGroup(group_id, user_id) {
+  const result = await queryMany(
+    "DELETE FROM system_group_users WHERE group_id = ? AND user_id = ?",
+    [Number(group_id), Number(user_id)]
+  );
   if (result.affectedRows === 0) throw new Error("User not in group");
   return true;
 }
 
-async function fnGetFormGroups({ form_id }) {
+async function getFormGroups({ form_id }) {
   const sql = `
     SELECT
       g.id,
@@ -108,7 +104,7 @@ async function fnGetFormGroups({ form_id }) {
   return queryMany(sql, [form_id]);
 }
 
-async function fnAssignFormToGroup({ form_id, group_id }) {
+async function assignFormToGroup({ form_id, group_id }) {
   await queryMany(
     `INSERT INTO system_form_groups (form_id, group_id)
      VALUES (?, ?)
@@ -119,20 +115,23 @@ async function fnAssignFormToGroup({ form_id, group_id }) {
   return { form_id, group_id: Number(group_id) };
 }
 
-async function fnRemoveFormFromGroup({ form_id, group_id }) {
-  await queryMany("DELETE FROM system_form_groups WHERE form_id = ? AND group_id = ?", [form_id, Number(group_id)]);
+async function removeFormFromGroup({ form_id, group_id }) {
+  await queryMany(
+    "DELETE FROM system_form_groups WHERE form_id = ? AND group_id = ?",
+    [form_id, Number(group_id)]
+  );
   return { form_id, group_id: Number(group_id) };
 }
 
 module.exports = {
-  fnGroupList,
-  fnGroupGet,
-  fnGroupCreate,
-  fnGroupUpdate,
-  fnGroupDelete,
-  fnGroupAssign,
-  fnGroupRemove,
-  fnGetFormGroups,
-  fnAssignFormToGroup,
-  fnRemoveFormFromGroup,
+  listGroups,
+  getGroup,
+  createGroup,
+  updateGroup,
+  deleteGroup,
+  assignGroup,
+  removeGroup,
+  getFormGroups,
+  assignFormToGroup,
+  removeFormFromGroup
 };

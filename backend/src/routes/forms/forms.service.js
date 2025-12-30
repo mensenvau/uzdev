@@ -48,7 +48,7 @@ function createGoogleDriveClient(credentials) {
   return google.drive({ version: "v3", auth });
 }
 
-async function fnGetFormsList({ credentials, page_size = 10, page_token = null }) {
+async function getFormsList({ credentials, page_size = 10, page_token = null}) {
   try {
     const drive = createGoogleDriveClient(credentials);
 
@@ -88,7 +88,7 @@ async function fnGetFormsList({ credentials, page_size = 10, page_token = null }
   }
 }
 
-async function fnGetFormStructure({ credentials, form_id }) {
+async function getFormStructure({ credentials, form_id }) {
   try {
     const forms = createGoogleFormsClient(credentials);
 
@@ -158,10 +158,10 @@ async function fnGetFormStructure({ credentials, form_id }) {
   }
 }
 
-async function fnGetFormResponses({ credentials, form_id, page_size = 100, page_token = null, filters = {} }) {
+async function getFormResponses({ credentials, form_id, page_size = 100, page_token = null, filters = {} }) {
   try {
     const forms = createGoogleFormsClient(credentials);
-    const form_structure = await fnGetFormStructure({ credentials, form_id });
+    const form_structure = await getFormStructure({ credentials, form_id });
 
     const request = {
       formId: form_id,
@@ -224,9 +224,9 @@ async function fnGetFormResponses({ credentials, form_id, page_size = 100, page_
   }
 }
 
-async function fnGetFormResponsesWithColumns({ credentials, form_id, visible_columns = [], calculate_columns = [] }) {
+async function getFormResponsesWithColumns({ credentials, form_id, visible_columns = [], calculate_columns = [] }) {
   try {
-    const result = await fnGetFormResponses({ credentials, form_id });
+    const result = await getFormResponses({ credentials, form_id });
 
     if (visible_columns.length > 0) {
       result.responses = result.responses.map((response) => ({
@@ -284,8 +284,8 @@ async function fnGetFormResponsesWithColumns({ credentials, form_id, visible_col
 }
 
 module.exports = {
-  fnGetFormsList,
-  fnGetFormStructure,
-  fnGetFormResponses,
-  fnGetFormResponsesWithColumns,
+  getFormsList,
+  getFormStructure,
+  getFormResponses,
+  getFormResponsesWithColumns
 };

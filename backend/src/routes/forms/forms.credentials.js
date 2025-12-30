@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-function fnGetGoogleFormsCredentials() {
+function getGoogleFormsCredentials() {
   const service_account_path = process.env.GOOGLE_SERVICE_ACCOUNT_PATH;
 
   if (!service_account_path) {
@@ -29,5 +29,5 @@ function fnGetGoogleFormsCredentials() {
 }
 
 module.exports = {
-  fnGetGoogleFormsCredentials,
+  getGoogleFormsCredentials
 };

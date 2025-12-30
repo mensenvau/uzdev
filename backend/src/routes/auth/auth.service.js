@@ -14,7 +14,7 @@ async function getUserWithRoles(user_id) {
   const [default_role, roles, groups] = await Promise.all([
     user.default_role_id ? queryOne("SELECT * FROM system_roles WHERE id = ?", [user.default_role_id]) : Promise.resolve(null),
     queryMany(`SELECT r.* FROM system_roles r INNER JOIN system_user_roles ur ON ur.role_id = r.id WHERE ur.user_id = ?`, [Number(user_id)]),
-    queryMany(`SELECT g.* FROM system_groups g INNER JOIN system_group_users gu ON gu.group_id = g.id WHERE gu.user_id = ?`, [Number(user_id)]),
+    queryMany(`SELECT g.* FROM system_groups g INNER JOIN system_group_users gu ON gu.group_id = g.id WHERE gu.user_id = ?`, [Number(user_id)])
   ]);
 
   const role_list = roles;
@@ -33,21 +33,24 @@ async function getUserWithRoles(user_id) {
     default_role: default_role || null,
     role: active_role,
     roles: role_list,
-    groups: groups,
+    groups: groups
   };
 }
 
-async function fnAuthSignUp(email, first_name, last_name, phone, password) {
+async function signUp(email, first_name, last_name, phone, password) {
   const existing = await queryMany("SELECT id FROM system_users WHERE email = ?", [email]);
   if (existing.length > 0) throw new Error("Email already exists");
 
   const hashed_password = await hashPassword(password);
 
-  const role_res = await queryMany("SELECT id FROM system_roles WHERE name = ?", ["user"]);
-  const role_user_id = role_res[0]?.id || null;
+  const role_result = await queryMany("SELECT id FROM system_roles WHERE name = ?", ["user"]);
+  const role_user_id = role_result[0]?.id || null;
 
-  const user_res = await queryMany("INSERT INTO system_users (email, username, first_name, last_name, phone, password, default_role_id) VALUES (?, ?, ?, ?, ?, ?, ?)", [email, email, first_name, last_name, phone, hashed_password, role_user_id]);
-  const created_user_id = user_res.insertId;
+  const user_result = await queryMany(
+    "INSERT INTO system_users (email, username, first_name, last_name, phone, password, default_role_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [email, email, first_name, last_name, phone, hashed_password, role_user_id]
+  );
+  const created_user_id = user_result.insertId;
 
   if (role_user_id) {
     await queryMany("INSERT INTO system_user_roles (user_id, role_id) VALUES (?, ?)", [created_user_id, role_user_id]);
@@ -59,17 +62,17 @@ async function fnAuthSignUp(email, first_name, last_name, phone, password) {
     user_id: created_user_id,
     email: hydrated_user?.email || email,
     first_name: hydrated_user?.first_name || first_name,
-    last_name: hydrated_user?.last_name || last_name,
+    last_name: hydrated_user?.last_name || last_name
   };
 
   return {
     access_token: signAccessToken(token_payload),
     refresh_token: signRefreshToken({ user_id: created_user_id }),
-    user: hydrated_user,
+    user: hydrated_user
   };
 }
 
-async function fnAuthSignIn(email, password) {
+async function signIn(email, password) {
   const users = await queryMany("SELECT id, email, username, first_name, last_name, phone, password FROM system_users WHERE email = ?", [email]);
 
   if (!users || users.length === 0 || !users[0].password) {
@@ -77,8 +80,8 @@ async function fnAuthSignIn(email, password) {
   }
 
   const user = users[0];
-  const valid = await comparePassword(password, user.password);
-  if (!valid) throw new Error("Invalid credentials");
+  const is_valid = await comparePassword(password, user.password);
+  if (!is_valid) throw new Error("Invalid credentials");
 
   const hydrated_user = await getUserWithRoles(user.id);
 
@@ -87,19 +90,19 @@ async function fnAuthSignIn(email, password) {
       user_id: user.id,
       email: user.email,
       first_name: user.first_name,
-      last_name: user.last_name,
+      last_name: user.last_name
     }),
     refresh_token: signRefreshToken({ user_id: user.id }),
-    user: hydrated_user,
+    user: hydrated_user
   };
 }
 
-async function fnAuthSignInWithGoogle(id_token) {
+async function signInWithGoogle(id_token) {
   if (!google_client) throw new Error("Google client not configured");
 
   const ticket = await google_client.verifyIdToken({
     idToken: id_token,
-    audience: google_client_id,
+    audience: google_client_id
   });
 
   const payload = ticket.getPayload();
@@ -116,11 +119,14 @@ async function fnAuthSignInWithGoogle(id_token) {
   let user_id;
 
   if (users.length === 0) {
-    const role_res = await queryMany("SELECT id FROM system_roles WHERE name = ?", ["user"]);
-    const role_user_id = role_res[0]?.id || null;
+    const role_result = await queryMany("SELECT id FROM system_roles WHERE name = ?", ["user"]);
+    const role_user_id = role_result[0]?.id || null;
 
-    const user_res = await queryMany("INSERT INTO system_users (email, username, first_name, last_name, google_id, default_role_id) VALUES (?, ?, ?, ?, ?, ?)", [email, email, first_name, last_name, google_id, role_user_id]);
-    const new_user_id = user_res.insertId;
+    const user_result = await queryMany(
+      "INSERT INTO system_users (email, username, first_name, last_name, google_id, default_role_id) VALUES (?, ?, ?, ?, ?, ?)",
+      [email, email, first_name, last_name, google_id, role_user_id]
+    );
+    const new_user_id = user_result.insertId;
 
     if (role_user_id) {
       await queryMany("INSERT INTO system_user_roles (user_id, role_id) VALUES (?, ?)", [new_user_id, role_user_id]);
@@ -137,14 +143,14 @@ async function fnAuthSignInWithGoogle(id_token) {
       user_id: user_id,
       email: hydrated_user?.email || email,
       first_name: hydrated_user?.first_name || first_name,
-      last_name: hydrated_user?.last_name || last_name,
+      last_name: hydrated_user?.last_name || last_name
     }),
     refresh_token: signRefreshToken({ user_id: user_id }),
-    user: hydrated_user,
+    user: hydrated_user
   };
 }
 
-async function fnAuthRefreshToken(refresh_token) {
+async function refreshToken(refresh_token) {
   const decoded = verifyRefreshToken(refresh_token);
   if (!decoded) throw new Error("Invalid refresh token");
 
@@ -153,11 +159,11 @@ async function fnAuthRefreshToken(refresh_token) {
 
   return {
     access_token: signAccessToken({ user_id: users[0].id }),
-    refresh_token: signRefreshToken({ user_id: users[0].id }),
+    refresh_token: signRefreshToken({ user_id: users[0].id })
   };
 }
 
-async function fnAuthForgotPassword(email) {
+async function forgotPassword(email) {
   const users = await queryMany("SELECT id FROM system_users WHERE email = ?", [email]);
   if (users.length === 0) return;
 
@@ -167,19 +173,19 @@ async function fnAuthForgotPassword(email) {
   await sendPasswordResetEmail(email, reset_url);
 }
 
-async function fnAuthResetPassword(token, new_password) {
+async function resetPassword(token, new_password) {
   const decoded = verifyPasswordResetToken(token);
   if (!decoded?.user_id) throw new Error("Invalid or expired reset token");
 
-  const hashed = await hashPassword(new_password);
-  await queryMany("UPDATE system_users SET password = ? WHERE id = ?", [hashed, Number(decoded.user_id)]);
+  const hashed_password = await hashPassword(new_password);
+  await queryMany("UPDATE system_users SET password = ? WHERE id = ?", [hashed_password, Number(decoded.user_id)]);
 }
 
 module.exports = {
-  fnAuthSignUp,
-  fnAuthSignIn,
-  fnAuthSignInWithGoogle,
-  fnAuthRefreshToken,
-  fnAuthForgotPassword,
-  fnAuthResetPassword,
+  signUp,
+  signIn,
+  signInWithGoogle,
+  refreshToken,
+  forgotPassword,
+  resetPassword
 };
