@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { listForms, getCredentials, type GoogleForm } from "@/lib/forms-api";
+import { listForms, type GoogleForm } from "@/lib/forms-api";
 import { FileText, ArrowRight, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,9 +19,7 @@ export default function Home() {
   const fetchForms = async () => {
     try {
       setLoading(true);
-      const credentials = getCredentials();
-
-      const response = await listForms(credentials, 30, null);
+      const response = await listForms(30, null);
       setForms(response.forms);
     } catch (error: any) {
       console.error("Failed to fetch forms:", error);
@@ -84,7 +82,7 @@ export default function Home() {
                   {forms.map((form) => (
                     <Link
                       key={form.id}
-                      href={`/forms/public/${form.id}`}
+                      href={`/auth/login`}
                       className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors group"
                     >
                       <div className="flex items-center gap-3">

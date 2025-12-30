@@ -89,6 +89,7 @@ export function GeneralTab({ userId, initialUser, onUserChange }: GeneralTabProp
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">Edit the basic details for this user.</p>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <label className="text-sm font-medium">Email</label>

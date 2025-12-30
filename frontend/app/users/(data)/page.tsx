@@ -9,6 +9,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { useAuthGuard } from "@/lib/use-auth-guard";
 import { toast } from "sonner";
 import api from "@/lib/api";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 type UserRow = {
   id: number;
@@ -69,11 +70,11 @@ export default function UsersPage() {
 
   return (
     <DashboardShell user={user} onLogout={handleLogout} title="Users" subtitle="Connected to /users API with pagination.">
-      <div className="space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <Card className="border bg-white/80 backdrop-blur">
+        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Users</h2>
-            <p className="text-sm text-muted-foreground">Browse and manage all accounts.</p>
+            <CardTitle>Users</CardTitle>
+            <CardDescription>Browse and manage all accounts.</CardDescription>
           </div>
           <div className="flex gap-2">
             <Input
@@ -90,26 +91,25 @@ export default function UsersPage() {
               Add user
             </Button>
           </div>
-        </div>
-
-        <div className="rounded-xl border bg-white/80 backdrop-blur">
+        </CardHeader>
+        <CardContent className="space-y-3">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-muted-foreground">
-                  <th className="px-3 py-2">Name</th>
-                  <th className="px-3 py-2">Email</th>
-                  <th className="px-3 py-2">Phone</th>
-                  <th className="px-3 py-2 w-32">Actions</th>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3 w-32 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((row) => (
                   <tr key={row.id} className="border-t">
-                    <td className="px-3 py-2 font-medium">{row.first_name || row.last_name ? `${row.first_name || ""} ${row.last_name || ""}`.trim() : "—"}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{row.email}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{row.phone || "—"}</td>
-                    <td className="px-3 py-2">
+                    <td className="px-4 py-3 font-medium">{row.first_name || row.last_name ? `${row.first_name || ""} ${row.last_name || ""}`.trim() : "-"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{row.email}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{row.phone || "-"}</td>
+                    <td className="px-4 py-3">
                       <div className="flex gap-2 justify-end">
                         <Button variant="outline" size="sm" className="px-2" onClick={() => router.push(`/users/manage?id=${row.id}`)} title="Edit">
                           Manage
@@ -123,14 +123,14 @@ export default function UsersPage() {
                 ))}
                 {users.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
+                    <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
                       No users found.
                     </td>
                   </tr>
                 )}
                 {loading && (
                   <tr>
-                    <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
+                    <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
                       Loading...
                     </td>
                   </tr>
@@ -151,8 +151,8 @@ export default function UsersPage() {
               </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </DashboardShell>
   );
 }
