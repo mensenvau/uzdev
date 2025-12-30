@@ -163,12 +163,16 @@ async function fnGetFormResponses({ credentials, form_id, page_size = 100, page_
     const forms = createGoogleFormsClient(credentials);
     const form_structure = await fnGetFormStructure({ credentials, form_id });
 
-    const response = await forms.forms.responses.list({
+    const request = {
       formId: form_id,
       pageSize: page_size,
-      pageToken: page_token,
       filter: filters.filter || undefined,
-    });
+    };
+    if (page_token) {
+      request.pageToken = page_token;
+    }
+
+    const response = await forms.forms.responses.list(request);
 
     const responses = response.data.responses || [];
     const formatted_responses = [];

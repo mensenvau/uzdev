@@ -6,7 +6,6 @@ const cors = require('cors');
 const authRouter = require('./routes/auth/auth.router');
 const formsRouter = require('./routes/forms/forms.router');
 const groupRouter = require('./routes/group/group.router');
-const groupsRouter = require('./routes/groups/groups.router');
 const policyRouter = require('./routes/policy/policy.router');
 const roleRouter = require('./routes/role/role.router');
 const userRouter = require('./routes/user/user.router');
@@ -26,7 +25,6 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/forms", formsRouter);
 app.use("/api/groups", groupRouter);
-app.use("/api/groups-all", groupsRouter);
 app.use("/api/policies", policyRouter);
 app.use("/api/roles", roleRouter);
 app.use("/api/users", userRouter);

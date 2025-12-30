@@ -89,6 +89,41 @@ async function fnGroupRemove(group_id, user_id) {
   return true;
 }
 
+async function fnGetFormGroups({ form_id }) {
+  const sql = `
+    SELECT
+      g.id,
+      g.name,
+      g.description,
+      sfg.created_at AS assigned_at,
+      COUNT(DISTINCT gu.user_id) AS member_count
+    FROM system_form_groups sfg
+    INNER JOIN system_groups g ON sfg.group_id = g.id
+    LEFT JOIN system_group_users gu ON g.id = gu.group_id
+    WHERE sfg.form_id = ?
+    GROUP BY g.id
+    ORDER BY g.name ASC
+  `;
+
+  return queryMany(sql, [form_id]);
+}
+
+async function fnAssignFormToGroup({ form_id, group_id }) {
+  await queryMany(
+    `INSERT INTO system_form_groups (form_id, group_id)
+     VALUES (?, ?)
+     ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP`,
+    [form_id, Number(group_id)]
+  );
+
+  return { form_id, group_id: Number(group_id) };
+}
+
+async function fnRemoveFormFromGroup({ form_id, group_id }) {
+  await queryMany("DELETE FROM system_form_groups WHERE form_id = ? AND group_id = ?", [form_id, Number(group_id)]);
+  return { form_id, group_id: Number(group_id) };
+}
+
 module.exports = {
   fnGroupList,
   fnGroupGet,
@@ -97,4 +132,7 @@ module.exports = {
   fnGroupDelete,
   fnGroupAssign,
   fnGroupRemove,
+  fnGetFormGroups,
+  fnAssignFormToGroup,
+  fnRemoveFormFromGroup,
 };

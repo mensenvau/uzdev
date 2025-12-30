@@ -6,7 +6,9 @@ const {
   schemaFormsList,
   schemaFormGet,
   schemaFormResponses,
+  schemaFormResponsesBody,
   schemaFormResponsesWithColumns,
+  schemaFormResponsesWithColumnsBody,
 } = require("./forms.schema");
 const {
   formsList,
@@ -20,12 +22,12 @@ const {
   schemaAssignFormToGroup,
   schemaFormId,
   schemaRemoveFormFromGroup,
-} = require("../groups/groups.schema");
+} = require("../group/group.schema");
 const {
-  formGroupsList,
-  assignFormToGroup,
-  removeFormFromGroup,
-} = require("../groups/groups.controller");
+  groupFormGroupsList,
+  groupAssignFormToGroup,
+  groupRemoveFormFromGroup,
+} = require("../group/group.controller");
 
 const router = express.Router();
 
@@ -36,14 +38,28 @@ router.post("/list", authMiddleware, policyMiddleware("forms.list"), validateBod
 
 router.post("/:form_id", authMiddleware, policyMiddleware("forms.get"), validateParams(schemaFormGet), formGet);
 
-router.post("/:form_id/responses", authMiddleware, policyMiddleware("forms.view_responses"), validateParams(schemaFormResponses), validateBody(schemaFormResponses), formResponses);
+router.post(
+  "/:form_id/responses",
+  authMiddleware,
+  policyMiddleware("forms.view_responses"),
+  validateParams(schemaFormGet),
+  validateBody(schemaFormResponsesBody),
+  formResponses
+);
 
-router.post("/:form_id/responses/columns", authMiddleware, policyMiddleware("forms.view_responses"), validateParams(schemaFormResponsesWithColumns), validateBody(schemaFormResponsesWithColumns), formResponsesWithColumns);
+router.post(
+  "/:form_id/responses/columns",
+  authMiddleware,
+  policyMiddleware("forms.view_responses"),
+  validateParams(schemaFormGet),
+  validateBody(schemaFormResponsesWithColumnsBody),
+  formResponsesWithColumns
+);
 
-router.get("/:form_id/groups", authMiddleware, policyMiddleware("forms.manage_access"), validateParams(schemaFormId), formGroupsList);
+router.get("/:form_id/groups", authMiddleware, policyMiddleware("forms.manage_access"), validateParams(schemaFormId), groupFormGroupsList);
 
-router.post("/:form_id/groups", authMiddleware, policyMiddleware("forms.manage_access"), validateParams(schemaFormId), validateBody(schemaAssignFormToGroup), assignFormToGroup);
+router.post("/:form_id/groups", authMiddleware, policyMiddleware("forms.manage_access"), validateParams(schemaFormId), validateBody(schemaAssignFormToGroup), groupAssignFormToGroup);
 
-router.delete("/:form_id/groups/:group_id", authMiddleware, policyMiddleware("forms.manage_access"), validateParams(schemaRemoveFormFromGroup), removeFormFromGroup);
+router.delete("/:form_id/groups/:group_id", authMiddleware, policyMiddleware("forms.manage_access"), validateParams(schemaRemoveFormFromGroup), groupRemoveFormFromGroup);
 
 module.exports = router;

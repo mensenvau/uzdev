@@ -1,11 +1,6 @@
 const { asyncHandler } = require("../../utils/async.util");
 const { sendSuccess } = require("../../utils/response.util");
-const {
-  fnGetFormsList,
-  fnGetFormStructure,
-  fnGetFormResponses,
-  fnGetFormResponsesWithColumns,
-} = require("./forms.service");
+const { fnGetFormsList, fnGetFormStructure, fnGetFormResponses, fnGetFormResponsesWithColumns } = require("./forms.service");
 const { fnGetGoogleFormsCredentials } = require("./forms.credentials");
 
 const formsList = asyncHandler(async (req, res) => {
@@ -41,12 +36,12 @@ const formResponses = asyncHandler(async (req, res) => {
   const result = await fnGetFormResponses({
     credentials: google_credentials,
     form_id,
-    page_size: parseInt(page_size) || 100,
-    page_token: page_token || null,
-    filters: filters || {},
-  });
+  page_size: parseInt(page_size) || 100,
+  page_token: page_token || null,
+  filters: filters || {},
+});
 
-  sendSuccess(res, result, "Form responses fetched successfully");
+sendSuccess(res, result, "Form responses fetched successfully");
 });
 
 const formResponsesWithColumns = asyncHandler(async (req, res) => {

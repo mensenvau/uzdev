@@ -60,5 +60,7 @@ module.exports = {
   schemaFormsList,
   schemaFormGet,
   schemaFormResponses,
+  schemaFormResponsesBody: schemaFormResponses.omit({ form_id: true }),
   schemaFormResponsesWithColumns,
+  schemaFormResponsesWithColumnsBody: schemaFormResponsesWithColumns.omit({ form_id: true }),
 };
